@@ -1,0 +1,100 @@
+/* we can use web-css variables, fabric compiles those to gtk-css.
+   global variables can be defined in the :vars selector... */
+:vars {
+    /* Core palette (Light mode) */
+    --foreground: #0a0a0a;
+    --background: #000000;            /* matte black */
+    --surface: #0a0a0a;               /* cards / elevated surfaces */
+    --overlay: #111111;               /* menus / popovers */
+    --border: #f0e9dd;
+    --muted: #8c8c8c;
+
+
+    /* Grayscale */
+    --white1: #d6d0c6;
+    --white2: #e4ded3;
+    --white3: #c2b9ad;
+    --white4: #9a9086;
+    --white5: #f0e9dd;
+
+    /* 16 deep rainbow hues (powerful & saturated) */
+    --color0:  #ce1616; /* red */
+    --color1:  #ce5b16; /* vermilion */
+    --color2:  #cea016; /* orange/amber */
+    --color3:  #b7ce16; /* yellow-green */
+    --color4:  #72ce16; /* chartreuse */
+    --color5:  #2dce16; /* lime */
+    --color6:  #16ce44; /* spring green */
+    --color7:  #16ce89; /* aquamarine */
+    --color8:  #16cece; /* cyan */
+    --color9:  #1689ce; /* azure */
+    --color10: #1644ce; /* blue */
+    --color11: #2d16ce; /* indigo */
+    --color12: #7216ce; /* violet */
+    --color13: #b716ce; /* purple */
+    --color14: #ce16a0; /* magenta */
+    --color15: #ce165b; /* rose */
+
+    /* widgets */
+    --window-bg: alpha(var(--background), 0.8);
+    --module-bg: alpha(var(--background), 0.4);
+    --border-color: var(--border);
+    --ws-active: var(--color11);
+    --ws-inactive: var(--surface);
+    --ws-empty: var(--surface);
+    --ws-hover: var(--accent);
+    --ws-urgent: var(--color12);
+    --tooltip-hover: alpha(var(--muted), 0.4);
+
+    --widget-bg: var(--module-bg);
+
+    /* Main colors */
+    --main: #f2eee8;
+    --text: #f2eee8;
+    --text-weak: #d2cdc5;
+    --accent1: var(--color10);
+    --accent2: var(--color5);
+    --accent3: var(--color2);
+    --accent4: var(--color14);
+}
+
+
+* {
+    /* unset so we can style everything from the ground up. */
+    all: unset;
+
+    /* text color */
+    color: var(--text);
+    font-size: 16px;
+    font-family: "Jost*", sans-serif;
+
+    /* pill shape */
+    background-color: transparent;
+    color: var(--text)
+}
+
+.top-widget,
+.widget {
+    border-radius: 10px;
+    background-color: var(--widget-bg);
+    padding: 4px;
+}
+.top-widget {
+    border-radius: 0 0 12 12px;
+}
+
+.shape {
+    min-width: 12px;
+    min-height: 12px;
+    background-color: var(--widget-bg);
+}
+
+.top-corner {
+    /*margin: 6 6 6 6px;*/
+    padding: 6 6 6 6px;
+}
+
+
+.hidden {
+    background-color: var(--transparent);
+}

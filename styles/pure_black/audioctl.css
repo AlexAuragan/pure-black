@@ -1,0 +1,167 @@
+/* Root */
+#audioctl-root { background: transparent; }
+
+/* Frame */
+#audioctl-root #tabs-content-bg {
+  background: var(--window-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+}
+
+/* Make tabs sit onto the frame border */
+#audioctl-root .tabs-bar {
+  margin-bottom: -1px; /* overlap frame top border by 1px */
+}
+
+/* Button itself should not paint a different bg */
+#audioctl-root .folder-tab .tab-button-core { background: transparent; }
+
+/* ---------- INACTIVE TABS ---------- */
+#audioctl-root .folder-tab #tab-core,
+#audioctl-root .folder-tab .tab-corner {
+  background: var(--overlay);
+}
+
+#audioctl-root .folder-tab #tab-core {
+  padding: 6px 12px;
+  border-top-left-radius: 10px;
+  border-top-right-radius: 10px;
+  border: 1px solid transparent; /* no outline */
+}
+
+/* ---------- ACTIVE TAB ---------- */
+#audioctl-root .folder-tab.active #tab-core,
+#audioctl-root .folder-tab.active .tab-corner {
+  background: var(--window-bg);
+}
+
+/* Nudge the active tab down 1px so there is NO gap line to the frame */
+#audioctl-root .folder-tab.active {
+  margin-bottom: -1px;
+}
+
+/* Core: only top border here; left/right handled by corners + core outer edge */
+#audioctl-root .folder-tab.active #tab-core {
+  border-top: 1px solid var(--border-color);
+
+  /* kill seams with corners */
+  border-left: 1px solid var(--window-bg);
+  border-right: 1px solid var(--window-bg);
+
+  /* IMPORTANT: don't draw a bottom border; let it merge with frame */
+  border-bottom: 0;
+}
+
+/* Left corner: draw the OUTER border (top + left). Inner edge to core is window-bg */
+#audioctl-root .folder-tab.active .tab-left-corner {
+  border-top: 1px solid var(--border-color);
+  border-left: 1px solid var(--border-color);
+
+  /* seam to core */
+  border-right: 1px solid var(--window-bg);
+
+  /* no bottom border to avoid the line above the frame */
+  border-bottom: 0;
+}
+
+/* Right corner: draw OUTER border (top + right). Inner edge to core is window-bg */
+#audioctl-root .folder-tab.active .tab-right-corner {
+  border-top: 1px solid var(--border-color);
+  border-right: 1px solid var(--border-color);
+
+  /* seam to core */
+  border-left: 1px solid var(--window-bg);
+
+  /* no bottom border to avoid the line above the frame */
+  border-bottom: 0;
+}
+
+
+/*
+#tabs-root {
+}
+
+#folder-tab {
+  margin: 0px 6px 0px 0px;
+}
+
+#folder-tab.active {
+  margin-bottom: -1px;
+}
+
+#folder-tab.active .tab-core {
+  background: rgba(255, 255, 255, 0.10);
+
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-bottom: 0px;
+}
+
+#tab-button-core {
+  padding: 0px;
+  background: transparent;
+  border: 0px;
+}
+
+#folder-tab:not(.active) .tab-core:hover {
+  background: rgba(255, 255, 255, 0.09);
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+
+#tab-corner {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+#folder-tab.active .tab-corner {
+  background: rgba(255, 255, 255, 0.10);
+}
+#top-corner {
+  background: rgba(255, 255, 255, 0.10);
+}
+
+#tabs-content-frame {
+  padding: 0px 10px 10px 10px;
+}
+
+#content-background {
+  padding: 12px;
+  border-bottom-left-radius: 12px;
+  border-bottom-right-radius: 12px;
+
+  background: rgba(255, 255, 255, 0.10);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+
+  border-top-left-radius: 0px;
+  border-top-right-radius: 0px;
+}
+
+#tabs-content-frame .content-background {
+  border-top: 1px solid rgba(255, 255, 255, 0.16);
+}
+
+#tabs-stack {
+}
+
+
+#stream-row {
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+#stream-label {
+  opacity: 0.95;
+}
+
+#stream-mute {
+  padding: 4px 10px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+}
+
+#stream-mute:hover {
+  background: rgba(255, 255, 255, 0.09);
+  border-color: rgba(255, 255, 255, 0.16);
+}
+*/

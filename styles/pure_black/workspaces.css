@@ -1,0 +1,72 @@
+/* Tray container */
+
+#workspaces {
+  min-width: 0px;
+}
+
+#workspaces-content {
+  padding: 4px;
+  border-radius: 0 0 12px 12px;
+}
+
+#workspaces-background {
+  padding: 4px;
+  background-color: var(--module-bg);
+  border-radius: 0 0 12px 12px;
+}
+
+
+#workspaces .workspace-row > box {
+  min-width: 16px;
+  min-height: 16px;
+  margin: 1px 1px;
+
+}
+
+/* Workspace buttons as dots/pills */
+#workspaces .workspace-button-box {
+  margin: 0px 4px;
+  min-height: 18px;
+  min-width: 8px;
+  padding: 0px 8px;
+  background-color: transparent;
+  transition: padding 0.08s, background-color 0.08s;
+  border-radius: 9999px;
+  font-size: 10px;
+}
+
+
+#workspaces .workspace-button-box stack {
+  padding: 4px;
+}
+
+
+#workspaces .workspace-button-box .workspace_label {
+  font-size: 11px;
+}
+
+/* Hover */
+#workspaces .workspace-button-box.hover {
+  background-color: var(--ws-hover);
+}
+#workspaces .workspace-button-box.hover .workspace_label {
+  color: var(--ws-active);
+}
+
+#workspaces .workspace-button-box.active {
+  background-color: var(--ws-active);
+}
+
+
+.workspace-indicator {
+  background: var(--ws-active);
+  border-radius: 999px;
+}
+
+.workspace-indicator.hidden {
+  opacity: 0;
+}
+
+#workspaces .workspace-color-indicator {
+  background: var(--ws-inactive);
+}

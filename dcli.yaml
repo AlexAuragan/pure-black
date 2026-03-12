@@ -1,0 +1,5 @@
+description: Packages needed for this shell
+
+packages:
+  - ddcutil # DDC query and manipulation
+  - brightnessctl # Control monitors brightness
