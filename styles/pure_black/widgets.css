@@ -139,7 +139,7 @@
 
 /* Systray */
 #systray {
-    border-radius: 10px;
+    border-radius: 0 0 10 10px;
     background-color: var(--widget-bg);
     padding: 4px;
 }
