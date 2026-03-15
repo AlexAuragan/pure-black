@@ -13,8 +13,13 @@ class ClockLabel(Label):
         wday, month, mday, hour, am, tz, y = string.split()
         h, m, s = hour.split(":")
         h, m, s = int(h), int(m), int(s)
-        h = h + 12 if am.lower() == "pm" else h
-        h = h - 12 if h == 12 and am.lower() == "am" else h
+        ampm = am.lower()
+        if ampm == "am":
+            if h == 12:
+                h = 0
+        elif ampm == "pm":
+            if h != 12:
+                h += 12
         s = f"{s}" if s >= 10 else f"0{s}"
         m = f"{m}" if m >= 10 else f"0{m}"
         h = f"{h}" if h >= 10 else f"0{h}"

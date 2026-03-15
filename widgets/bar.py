@@ -70,6 +70,7 @@ class StatusBar(Window):
             visible=False,
             monitor=monitor,
         )
+        monitor = sorted(list(hypr_manager.monitors.keys()))[monitor]
         self.audio = Audio()
         self.clock = ClockWidget()
 
@@ -87,13 +88,12 @@ class StatusBar(Window):
             children=[]
         )
         self.hyprland = HyprlandManager()
-        self.active_window = ActiveWindowWidget(self.hyprland, self.monitor)
+        self.active_window = ActiveWindowWidget(self.hyprland, monitor)
         self.workspaces = HyprlandWorkspacesTray(self.hyprland, two_rows=False, monitor_id=monitor)
         self.systray = SystemTray()
         self.sound = Sound(self.audio)
         # self.media_player = MediaPlayer(self.audio)
-        print("monitor", self.monitor)
-        self.brightness = BrightnessWidget(Brightness(self.hyprland), self.monitor)
+        self.brightness = BrightnessWidget(Brightness(self.hyprland), monitor)
 
         self.left_box = Box(
             name="bar-left-box",
@@ -132,9 +132,7 @@ if __name__ == "__main__":
     hypr_manager = HyprlandManager()
     hypr_manager.connect("monitor-added", on_monitor_added)
 
-    monitors = hypr_manager.monitors
-    monitor_ids = monitors.keys() if monitors else [0]
-    bars = [StatusBar(monitor=m_id) for m_id in monitor_ids]
+    bars = [StatusBar(monitor=i) for i in range(len(hypr_manager.monitors))]
     app = Application("bars", *bars)
     css_path = os.path.join(PROJECT_DIR, "styles/pure_black/style.css")
     app.set_stylesheet_from_file(css_path)

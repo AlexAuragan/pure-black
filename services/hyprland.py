@@ -147,7 +147,7 @@ class HyprlandManager(Service):
         return self._workspaces
 
     @Property(object, "readable", "monitors", default_value=None)
-    def monitors(self):
+    def monitors(self) -> dict[int, Monitor]:
         return self._monitors
 
     @Property(object, "readable", "active_windows", default_value=None)
