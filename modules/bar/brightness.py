@@ -86,7 +86,7 @@ class BrightnessScale(EventBox):
 class BrightnessIcon(Box):
     def __init__(self, brightness_service: Brightness, screen_id: int):
         self._handler_id = None
-        self._current_stream = None
+        self._current_stream: BrightnessStream | None = None
         self._brightness: float = 0
 
         self.icon = Svg(str(BASE_ICON_PATH / "brightness_empty.svg"), size=24)

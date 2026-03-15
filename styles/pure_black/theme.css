@@ -98,3 +98,8 @@
 .hidden {
     background-color: var(--transparent);
 }
+
+.popup-window {
+    background-color: var(--window-bg);
+    border-radius: 10;
+}

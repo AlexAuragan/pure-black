@@ -46,26 +46,28 @@ class BrightnessStream(Service):
 
     @Property(float, "read-write")
     def screen_brightness(self) -> float:
-        if not self._is_external:
-            return self._read_sysfs()
         return self._cached_brightness
 
     @screen_brightness.setter
     def screen_brightness(self, value: float):
-        value = max(0, min(100, value))
+        value = max(0, min(100, float(value)))
+
+        # avoid tiny float oscillations and redundant writes
+        if abs(value - self._cached_brightness) < 0.5:
+            return
+
         self._cached_brightness = value
-        print(self._is_external)
+
         if self._is_external:
             if self._debounce_timer is not None:
                 self._debounce_timer.cancel()
             self._debounce_timer = Timer(0.1, self._apply_external_brightness, [value])
             self._debounce_timer.start()
         else:
-            print("apply value", value)
             self._apply_internal_brightness(value)
+
         self.changed()
         self.notify("screen-brightness")
-
     def _get_initial_brightness(self) -> float:
         try:
             if self._is_external:

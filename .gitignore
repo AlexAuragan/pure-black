@@ -1,1 +1,5 @@
 gengir/
+.idea
+*/*.pyc
+uv.lock
+tmp.*

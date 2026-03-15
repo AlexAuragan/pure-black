@@ -28,7 +28,7 @@ class SoundScale(EventBox):
             child=self.volume_bar,
         )
         self.show()
-
+        self._syncing = False
         self.volume_bar.connect("value-changed", self._on_bar_changed)
         self.audio_service.connect("notify::speaker", self._on_speaker_set)
         self.volume_bar.connect("scroll-event", self.on_scroll)

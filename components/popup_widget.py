@@ -55,6 +55,7 @@ class PopupWindow(WaylandWindow):
             all_visible=False,
             **kwargs,
         )
+        self.add_style_class("popup-window")
         self.on_before_show = on_before_show or (lambda *args: None)
         self.view = child_view
         self.is_hovered = False
