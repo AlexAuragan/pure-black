@@ -175,7 +175,7 @@ class HyprlandManager(Service):
 
     def __init__(self, hypr: Hyprland | None = None, **kwargs):
         super().__init__(**kwargs)
-        # self.__gsignals__["workspace-icons-changed"] = Signal("workspace-icons-changed", "run-first", None, (int,))
+
 
         # transport
         self.hypr = hypr or Hyprland(commands_only=False)
@@ -262,6 +262,7 @@ class HyprlandManager(Service):
 
     def _on_clients_event(self, *_args) -> None:
         self._schedule_clients_refresh()
+        self._schedule_workspaces_refresh()
 
     def _schedule_workspaces_refresh(self) -> None:
         if self._pending_workspaces:

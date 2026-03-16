@@ -49,7 +49,7 @@
     border-radius: 0 0 12px 12px;
 }
 #perf #perf_icon{
-    color: var(--surface);
+    color: var(--text);
 }
 #cpu-progress-bar,
 #ram-progress-bar {
