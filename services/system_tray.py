@@ -170,6 +170,9 @@ class SystemTrayItem(Service):
             preferred_icon_name = icon_name
             preferred_icon_pixmap = icon_pixmap
 
+        if not preferred_icon_name and preferred_icon_pixmap is None and not self.title:
+            return None # The icon has no data yet
+
         target_size = size if size is not None else 24
 
         # 1) Embedded pixmap
