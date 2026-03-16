@@ -227,10 +227,6 @@ class HyprlandManager(Service):
         ):
             self.hypr.connect(f"event::{name}", self._on_topology_event)
 
-        # 2. Specific Monitor signals (Added these for your new signals)
-        self.hypr.connect("event::monitor-added", self._on_monitor_added_event)
-        self.hypr.connect("event::monitor-removed", self._on_monitor_removed_event)
-
         # 3. Active window + presentation state
         for name in (
                 "activewindow",
@@ -422,22 +418,11 @@ class HyprlandManager(Service):
             self._schedule_workspace_icons_refresh()
 
     def _on_monitor_added_event(self, _hypr, data: str, *_args) -> None:
-        # Hyprland sends the monitor name (e.g., "DP-1") in the data
-        # We refresh first so the new monitor is in our self._monitors cache
-        self._refresh_monitors()
-
-        # Find the ID by matching the name
-        mon_id = -1
-        for mid, mon in self._monitors.items():
-            if mon["name"] == data:
-                mon_id = mid
-                break
-
-        self.emit("monitor-added", mon_id)
+        self.emit("monitor-added", -1)
+        self._schedule_monitors_refresh()
         self._schedule_workspaces_refresh()
 
     def _on_monitor_removed_event(self, _hypr, data: str, *_args) -> None:
-        # Find the ID from our current cache before we refresh and delete it
         mon_id = -1
         for mid, mon in self._monitors.items():
             if mon["name"] == data:
@@ -445,16 +430,13 @@ class HyprlandManager(Service):
                 break
 
         self.emit("monitor-removed", mon_id)
-
-        # Now refresh to clean up the internal state
         self._schedule_monitors_refresh()
         self._schedule_workspaces_refresh()
-
     def _apply_monitors(self, reply: HyprlandReply) -> None:
         raw = _decode_json(reply)
         if not isinstance(raw, list):
             return
-
+        old_ids = set(self._monitors.keys())
         new: dict[int, Monitor] = {}
         for mon in raw:
             if not isinstance(mon, dict):
@@ -505,8 +487,16 @@ class HyprlandManager(Service):
             new[mid] = new_mon
 
         if new != self._monitors:
+            new_ids = set(new.keys())
+            added_ids = new_ids - old_ids
+            removed_ids = old_ids - new_ids
             self._monitors = new
             self.notify("monitors")
+            for monitor_id in sorted(added_ids):
+                self.emit("monitor-added", monitor_id)
+
+            for monitor_id in sorted(removed_ids):
+                self.emit("monitor-removed", monitor_id)
 
     def _apply_activewindow(self, reply: HyprlandReply) -> None:
         raw = _decode_json(reply)

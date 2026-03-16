@@ -124,7 +124,7 @@ if __name__ == "__main__":
 
 
     def on_monitor_added(manager, monitor_id):
-        print(monitor_id)
+        print("monitor-id", monitor_id)
         new_bar = StatusBar(monitor=monitor_id)
         app.add_window(new_bar)
 
