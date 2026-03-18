@@ -52,6 +52,7 @@
     color: var(--text);
 }
 #cpu-progress-bar,
+#battery-progress-bar,
 #ram-progress-bar {
     color: transparent;
     background-color: transparent;

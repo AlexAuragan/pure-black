@@ -155,12 +155,16 @@ class PerfWidget(PopupWidget):
         cpu_icon.set_name("perf_icon")
         ram_icon = Svg(base + "memory.svg", icon_size=12)
         ram_icon.set_name("perf_icon")
+        battery_icon = Svg(base + "battery.svg", icon_size=12)
+        battery_icon.set_name("perf_icon")
+
 
         perf_data = Fabricator(
             interval=1000,
             poll_from=lambda f: {
                 "cpu": psutil.cpu_percent(),
                 "ram": psutil.virtual_memory(),
+                "battery": psutil.sensors_battery(),
                 "procs": [p.info for p in psutil.process_iter(['name', 'cpu_percent', 'memory_percent', 'memory_info'])]
             }
         )
@@ -176,12 +180,25 @@ class PerfWidget(PopupWidget):
             child=ram_icon,
             size=24,
          )
+
+        self.battery_widget = CircularProgressBar(
+            name="battery-progress-bar",
+            pie=True,
+            child=battery_icon,
+            size=24,
+        )
+
         perf_data.connect("changed", self.on_perf_changed)
 
         self.popup_view = PerfPopupView()
         self.popup = PopupWindow(self.popup_view)
 
-        self._inner = Box(children=[self.cpu_widget, self.ram_widget], spacing=4, name="perf")
+        children = [self.cpu_widget, self.ram_widget]
+
+        if psutil.sensors_battery() is not None:
+            children.append(self.battery_widget)
+
+        self._inner = Box(children=children, spacing=4, name="perf")
         super().__init__(
             name="perf",
             main_widget=self._inner,
@@ -193,6 +210,8 @@ class PerfWidget(PopupWidget):
     def on_perf_changed(self, fab: Fabricator, data: dict):
         self.cpu_widget.set_value(data["cpu"] / 100)
         self.ram_widget.set_value(data["ram"].percent / 100)
+        if (battery := data.get("battery")) is not None:
+            self.battery_widget.set_value(battery.percent / 100)
         if self.popup.get_visible():
             self.popup_view.update_display(data)
 
