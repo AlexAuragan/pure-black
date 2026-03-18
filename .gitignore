@@ -3,3 +3,4 @@ gengir/
 */*.pyc
 uv.lock
 tmp.*
+*/__pycache__
