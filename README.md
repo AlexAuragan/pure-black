@@ -14,3 +14,4 @@ It's made for hyprland.
 * [ ] Wallpaper changer
 * [ ] Quick tools selection
 * [ ] Redo the icon system to match the color theme
+* [ ] Notification interface
