@@ -47,7 +47,7 @@
 
 /* Hover */
 #workspaces .workspace-button-box.hover {
-  background-color: var(--ws-hover);
+  background-color: var(--text);
 }
 #workspaces .workspace-button-box.hover .workspace_label {
   color: var(--ws-active);

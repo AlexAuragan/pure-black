@@ -155,7 +155,7 @@ class BrightnessWidget(PopupWidget):
     @staticmethod
     def on_button_press(widget, event):
         if event.button == 1:
-            # Maybe open display settings?
+            # TODO Maybe open display settings ?
             subprocess.Popen(["wdisplays"])
 
     def change_brightness(self, delta: int):
