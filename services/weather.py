@@ -127,15 +127,17 @@ class WeatherService(Service):
     def _format_city(self, city: str) -> str:
         return "+".join(city.strip().split())
 
-    def _build_cmd(self) -> list[str]:
+    def _build_curl_cmd(self) -> list[str]:
         if self.gps_enabled and self.location["valid"]:
             target = f"{self.location['lat']},{self.location['lon']}"
         else:
             target = self._format_city(self.city)
+        return ["curl", "-s", f"wttr.in/{target}?format=j1"]
 
-        cmd = (
-            f"curl -s wttr.in/{target}?format=j1 | "
-            "jq '{"
+    def _build_jq_cmd(self) -> list[str]:
+        return [
+            "jq",
+            "{"
             "current: .current_condition[0], "
             "location: .nearest_area[0], "
             "forecast: (.weather[0:3] | map({"
@@ -146,15 +148,37 @@ class WeatherService(Service):
             "  totalPrecipMM: .totalPrecipMM, totalPrecipInches: .totalPrecipInches, "
             "  hourly: .hourly"
             "}))"
-            "}'"
-        )
-        return ["bash", "-c", cmd]
+            "}",
+        ]
+
+    def _build_jq_fallback_cmd(self) -> list[str]:
+        return [
+            "jq",
+            "{"
+            "current: .data.current_condition[0], "
+            "location: (.data.nearest_area[0] // null), "
+            "forecast: (.data.weather[0:3] | map({"
+            "  date: .date, "
+            "  astronomy: .astronomy[0], "
+            "  maxtempC: .maxtempC, maxtempF: .maxtempF, "
+            "  mintempC: .mintempC, mintempF: .mintempF, "
+            "  totalPrecipMM: .totalPrecipMM, totalPrecipInches: .totalPrecipInches, "
+            "  hourly: .hourly"
+            "}))"
+            "}",
+        ]
 
     def _fetch_raw(self) -> dict[str, Any] | None:
-        out = None
         try:
-            out = subprocess.check_output(self._build_cmd(), timeout=10)
-            return json.loads(out.decode("utf-8"))
+            raw = subprocess.check_output(self._build_curl_cmd(), timeout=10)
+            if not raw or not raw.strip():
+                return None
+            try:
+                out = subprocess.check_output(self._build_jq_cmd(), input=raw, timeout=10)
+                return json.loads(out.decode("utf-8"))
+            except Exception:
+                out = subprocess.check_output(self._build_jq_fallback_cmd(), input=raw, timeout=10)
+                return json.loads(out.decode("utf-8"))
         except Exception:
             return None
 
