@@ -165,7 +165,7 @@ class PerfWidget(PopupWidget):
                 "cpu": psutil.cpu_percent(),
                 "ram": psutil.virtual_memory(),
                 "battery": psutil.sensors_battery(),
-                "procs": [p.info for p in psutil.process_iter(['name', 'cpu_percent', 'memory_percent', 'memory_info'])]
+                "procs": [p.info for p in psutil.process_iter(['name', 'cpu_percent', 'memory_percent', 'memory_info'], ad_value=None)]
             }
         )
         self.cpu_widget = CircularProgressBar(

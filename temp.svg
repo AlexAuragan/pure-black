@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+  <rect width="400" height="400" fill="#1e1e2e"/>
+
+  <!-- Eye — shifted right ~20px -->
+  <path d="M 92 178 Q 156 108 220 108 Q 284 108 348 178 Q 284 248 220 248 Q 156 248 92 178 Z"
+        fill="#1e1e2e" stroke="#ffffff" stroke-width="15"/>
+
+  <!-- X cross pupil -->
+  <line x1="203" y1="161" x2="237" y2="195" stroke="#ffffff" stroke-width="15" stroke-linecap="round"/>
+  <line x1="238" y1="161" x2="203" y2="195" stroke="#ffffff" stroke-width="15" stroke-linecap="round"/>
+
+  <!-- > peace fingers — moved up ~25px -->
+  <path d="M 82 242 L 152 272 L 82 302"
+        fill="none" stroke="#ffffff" stroke-width="15" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
