@@ -1,5 +1,7 @@
 import os
 import subprocess
+import threading
+import time
 from pathlib import Path
 
 import psutil
@@ -13,7 +15,7 @@ from fabric.widgets.wayland import WaylandWindow
 
 from components import Svg
 
-from gi.repository import Gdk
+from gi.repository import GLib, Gdk
 
 from components.popup_widget import PopupWidget, PopupWindow
 from utils.widget_utils import position_under
@@ -159,15 +161,6 @@ class PerfWidget(PopupWidget):
         battery_icon.set_name("perf_icon")
 
 
-        perf_data = Fabricator(
-            interval=1000,
-            poll_from=lambda f: {
-                "cpu": psutil.cpu_percent(),
-                "ram": psutil.virtual_memory(),
-                "battery": psutil.sensors_battery(),
-                "procs": [p.info for p in psutil.process_iter(['name', 'cpu_percent', 'memory_percent', 'memory_info'], ad_value=None)]
-            }
-        )
         self.cpu_widget = CircularProgressBar(
             name="cpu-progress-bar",
             pie=True,
@@ -188,8 +181,6 @@ class PerfWidget(PopupWidget):
             size=24,
         )
 
-        perf_data.connect("changed", self.on_perf_changed)
-
         self.popup_view = PerfPopupView()
         self.popup = PopupWindow(self.popup_view)
 
@@ -206,8 +197,20 @@ class PerfWidget(PopupWidget):
         )
         self.add_style_class("top-widget")
         self.connect("button-press-event", self.on_button_press)
+        threading.Thread(target=self._poll_loop, daemon=True).start()
 
-    def on_perf_changed(self, fab: Fabricator, data: dict):
+    def _poll_loop(self):
+        while True:
+            data = {
+                "cpu": psutil.cpu_percent(),
+                "ram": psutil.virtual_memory(),
+                "battery": psutil.sensors_battery(),
+                "procs": [p.info for p in psutil.process_iter(['name', 'cpu_percent', 'memory_percent', 'memory_info'], ad_value=None)],
+            }
+            GLib.idle_add(self.on_perf_changed, data)
+            time.sleep(1)
+
+    def on_perf_changed(self, data: dict):
         self.cpu_widget.set_value(data["cpu"] / 100)
         self.ram_widget.set_value(data["ram"].percent / 100)
         if (battery := data.get("battery")) is not None:

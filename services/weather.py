@@ -5,7 +5,7 @@ import time
 import warnings
 from typing import Any, Callable, TypedDict
 
-from fabric import Fabricator
+from gi.repository import GLib
 
 from services.service import Service
 
@@ -92,25 +92,23 @@ class WeatherService(Service):
         self._callbacks: list[Callable[[WeatherServiceData], None]] = []
         self._lock = threading.Lock()
 
-        # Non blocking data fetch
-        threading.Thread(target=self._initial_fetch, daemon=True).start()
+        threading.Thread(target=self._bg_poll, daemon=True).start()
 
-        # Then keep polling
-        self._fabricator = Fabricator(
-            interval=self.fetch_interval_ms,
-            poll_from=lambda _: self._fetch_raw(),
-            on_changed=lambda _, raw2: self._apply_raw(raw2) if raw2 else None,
-        )
-
-    def _initial_fetch(self):
+    def _bg_poll(self):
         raw = None
         i = 0
         while raw is None and i <= 3:
             raw = self._fetch_raw()
             i += 1
-            time.sleep(10)
+            if raw is None:
+                time.sleep(10)
         if raw:
-            self._apply_raw(raw)
+            GLib.idle_add(self._apply_raw, raw)
+        while True:
+            time.sleep(self.fetch_interval_ms / 1000.0)
+            raw = self._fetch_raw()
+            if raw:
+                GLib.idle_add(self._apply_raw, raw)
 
     @property
     def data(self) -> WeatherServiceData:
