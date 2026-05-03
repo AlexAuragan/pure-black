@@ -6,6 +6,7 @@ from fabric.audio.service import Audio
 from modules.audioctl.pages import AudioControl
 from gi.repository import Gdk
 
+
 class AudioCTL:
     def __init__(self):
         self.audio = Audio(max_volume=100)
@@ -19,7 +20,7 @@ class AudioCTL:
             size=(1024, 1024),
             child=self.root,
             all_visible=True,
-            keyboard_mode="on-demand"
+            keyboard_mode="on-demand",
         )
 
         def on_enter(window, event):
@@ -40,6 +41,7 @@ class AudioCTL:
         self.window.connect("key-press-event", on_key_press)
         self.window.connect("focus-out-event", on_focus_out)
         self.window.present()
+
 
 def main() -> None:
     audioctl = AudioCTL()

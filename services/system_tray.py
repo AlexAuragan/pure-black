@@ -1,6 +1,11 @@
 import gi
-from fabric.system_tray.service import STATUS_NOTIFIER_WATCHER_BUS_NAME, STATUS_NOTIFIER_WATCHER_BUS_IFACE_NODE, \
-    STATUS_NOTIFIER_WATCHER_BUS_PATH, STATUS_NOTIFIER_ITEM_BUS_IFACE_NODE, STATUS_NOTIFIER_ITEM_BUS_NAME
+from fabric.system_tray.service import (
+    STATUS_NOTIFIER_WATCHER_BUS_NAME,
+    STATUS_NOTIFIER_WATCHER_BUS_IFACE_NODE,
+    STATUS_NOTIFIER_WATCHER_BUS_PATH,
+    STATUS_NOTIFIER_ITEM_BUS_IFACE_NODE,
+    STATUS_NOTIFIER_ITEM_BUS_NAME,
+)
 from gi.repository.GLib import GError
 from loguru import logger
 from pathlib import Path
@@ -105,10 +110,10 @@ class SystemTrayItem(Service):
         self._connection = proxy.get_connection()
         self._bus_name = proxy.get_name()
         self._bus_path = proxy.get_object_path()
-        self._identifier = self._bus_name + self._bus_path
+        self._identifier = (self._bus_name or "") + self._bus_path
 
         self._menu: DbusmenuGtk3.Menu | None = self.do_create_menu(
-            self._proxy.get_name_owner(), self.menu_object_path
+            self._proxy.get_name_owner() or "", self.menu_object_path
         )
         self._icon_theme: Gtk.IconTheme | None = None
 
@@ -145,13 +150,15 @@ class SystemTrayItem(Service):
     def get_preferred_icon_pixbuf(
         self,
         size: int | None = None,
-        resize_method: Literal[
-            "hyper",
-            "bilinear",
-            "nearest",
-            "tiles",
-        ]
-        | GdkPixbuf.InterpType = GdkPixbuf.InterpType.BILINEAR,
+        resize_method: (
+            Literal[
+                "hyper",
+                "bilinear",
+                "nearest",
+                "tiles",
+            ]
+            | GdkPixbuf.InterpType
+        ) = GdkPixbuf.InterpType.BILINEAR,
         monochrome: bool = False,
         monochrome_tint: tuple[float, float, float] | None = None,
     ) -> GdkPixbuf.Pixbuf | None:
@@ -171,7 +178,7 @@ class SystemTrayItem(Service):
             preferred_icon_pixmap = icon_pixmap
 
         if not preferred_icon_name and preferred_icon_pixmap is None and not self.title:
-            return None # The icon has no data yet
+            return None  # The icon has no data yet
 
         target_size = size if size is not None else 24
 
@@ -180,7 +187,9 @@ class SystemTrayItem(Service):
             pixbuf = preferred_icon_pixmap.as_pixbuf(target_size)
             if pixbuf is not None:
                 return self._maybe_monochrome(
-                    self._scale(pixbuf, size, resize_method), monochrome, monochrome_tint
+                    self._scale(pixbuf, size, resize_method),
+                    monochrome,
+                    monochrome_tint,
                 )
 
         # 2) Absolute path supplied directly as icon_name
@@ -198,7 +207,9 @@ class SystemTrayItem(Service):
         # 3) GTK icon theme (respects the item's own IconThemePath)
         if preferred_icon_name:
             icon_theme = self.icon_theme
-            icon_theme_sizes: list = icon_theme.get_icon_sizes(preferred_icon_name) or []
+            icon_theme_sizes: list = (
+                icon_theme.get_icon_sizes(preferred_icon_name) or []
+            )
             icon_theme_sizes.append(target_size)
             try:
                 pixbuf = icon_theme.load_icon(
@@ -208,7 +219,9 @@ class SystemTrayItem(Service):
                 )
                 if pixbuf is not None:
                     return self._maybe_monochrome(
-                        self._scale(pixbuf, size, resize_method), monochrome, monochrome_tint
+                        self._scale(pixbuf, size, resize_method),
+                        monochrome,
+                        monochrome_tint,
                     )
             except GLib.GError:
                 pass
@@ -225,7 +238,9 @@ class SystemTrayItem(Service):
                         pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_scale(
                             resolved, target_size, target_size, True
                         )
-                        return self._maybe_monochrome(pixbuf, monochrome, monochrome_tint)
+                        return self._maybe_monochrome(
+                            pixbuf, monochrome, monochrome_tint
+                        )
                     except GLib.GError:
                         pass
 
@@ -330,7 +345,7 @@ class SystemTrayItem(Service):
                 g = pixels[offset + 1]
                 b = pixels[offset + 2]
                 lum = 0.299 * r + 0.587 * g + 0.114 * b
-                pixels[offset]     = min(255, int((r + desat * (lum - r)) * tr))
+                pixels[offset] = min(255, int((r + desat * (lum - r)) * tr))
                 pixels[offset + 1] = min(255, int((g + desat * (lum - g)) * tg))
                 pixels[offset + 2] = min(255, int((b + desat * (lum - b)) * tb))
                 # alpha (offset + 3) left untouched
@@ -390,7 +405,7 @@ class SystemTrayItem(Service):
         return self.do_get_proxy_property("IconName")
 
     @Property(SystemTrayItemPixmap, "readable")
-    def icon_pixmap(self) -> SystemTrayItemPixmap:
+    def icon_pixmap(self) -> SystemTrayItemPixmap | None:
         return self.do_extract_pixmap(self.do_get_proxy_property("IconPixmap"))
 
     @Property(str, "readable")
@@ -398,7 +413,7 @@ class SystemTrayItem(Service):
         return self.do_get_proxy_property("OverlayIconName")
 
     @Property(SystemTrayItemPixmap, "readable")
-    def overlay_icon_pixmap(self) -> SystemTrayItemPixmap:
+    def overlay_icon_pixmap(self) -> SystemTrayItemPixmap | None:
         return self.do_extract_pixmap(self.do_get_proxy_property("OverlayIconPixmap"))
 
     @Property(str, "readable")
@@ -406,7 +421,7 @@ class SystemTrayItem(Service):
         return self.do_get_proxy_property("AttentionIconName")
 
     @Property(SystemTrayItemPixmap, "readable")
-    def attention_icon_pixmap(self) -> SystemTrayItemPixmap:
+    def attention_icon_pixmap(self) -> SystemTrayItemPixmap | None:
         return self.do_extract_pixmap(self.do_get_proxy_property("AttentionIconPixmap"))
 
     @Property(SystemTrayItemToolTip, "readable")
@@ -426,7 +441,7 @@ class SystemTrayItem(Service):
         if self._menu is not None:
             return self._menu
         self._menu = self.do_create_menu(
-            self._proxy.get_name_owner(), self.get_menu_object_path()
+            self._proxy.get_name_owner() or "", self.get_menu_object_path()
         )
         return self._menu  # type: ignore
 
@@ -449,6 +464,7 @@ class SystemTrayItem(Service):
             return self.context_menu_for_event(event)
         except GError:
             return None
+
     def scroll(
         self, delta: int, orientation: Literal["vertical", "horizontal"]
     ) -> None:
@@ -716,13 +732,17 @@ class SystemTray(Service):
         return
 
     def do_emit_bus_signal(self, signal_name: str, params: GLib.Variant) -> None:
-        self._connection.emit_signal(
-            None,
-            STATUS_NOTIFIER_WATCHER_BUS_PATH,
-            STATUS_NOTIFIER_WATCHER_BUS_NAME,
-            signal_name,
-            params,
-        ) if self._connection is not None else None
+        (
+            self._connection.emit_signal(
+                None,
+                STATUS_NOTIFIER_WATCHER_BUS_PATH,
+                STATUS_NOTIFIER_WATCHER_BUS_NAME,
+                signal_name,
+                params,
+            )
+            if self._connection is not None
+            else None
+        )
         return
 
     def do_notify_registered_item(self, identifier: str) -> None:

@@ -5,6 +5,7 @@ from fabric.audio.service import Audio
 from config.names import WORKSPACE_LABELS
 from services.hyprland import HyprlandManager, ActiveWindow, Monitor
 
+
 def shorten_title(string: str):
     max_len = 50
     if string.count("/") >= 4:
@@ -22,6 +23,7 @@ def shorten_title(string: str):
 
     return string
 
+
 class ActiveWindowWidget(Box):
     def __init__(self, hypr: HyprlandManager, mon_id: int, **kwargs):
         self.hypr = hypr
@@ -29,10 +31,28 @@ class ActiveWindowWidget(Box):
 
         self.test_audio = Audio()
 
-        icon_id = self.hypr.workspaces[self.mon_id]["id"] if self.mon_id in self.hypr.workspaces else None
-        self.icon = Label(name="active_workspace_label", label=WORKSPACE_LABELS.get(icon_id, "~"))
-        self.class_ = Label(name="active_window_class", label="~", h_align="start", style="font-size:8px;")
-        self.title = Label(name="active_window_title", label="~", h_align="fill", style="font-size:14px;")
+        _ws_id = (
+            self.hypr.workspaces[self.mon_id]["id"]
+            if self.mon_id in self.hypr.workspaces
+            else None
+        )
+        icon_id: int | None = int(_ws_id) if _ws_id is not None else None
+        self.icon = Label(
+            name="active_workspace_label",
+            label=WORKSPACE_LABELS.get(icon_id, "~") if icon_id is not None else "~",
+        )
+        self.class_ = Label(
+            name="active_window_class",
+            label="~",
+            h_align="start",
+            style="font-size:8px;",
+        )
+        self.title = Label(
+            name="active_window_title",
+            label="~",
+            h_align="fill",
+            style="font-size:14px;",
+        )
         self.icon.add_style_class("active_window_icon")
         super().__init__(
             name="active-window",

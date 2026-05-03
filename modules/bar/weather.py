@@ -1,6 +1,7 @@
 import os
 import subprocess
 from datetime import datetime
+from typing import Any
 from pathlib import Path
 from urllib.parse import quote_plus
 
@@ -76,6 +77,7 @@ ICON_NAME_TO_TAG = {
     "weather_hail": "Hail",
 }
 
+
 class WeatherPopupView(Box):
     def __init__(self, weather: WeatherService, **kwargs):
         super().__init__(
@@ -99,13 +101,21 @@ class WeatherPopupView(Box):
         self.left_col.add(self.sunrise)
         self.wind_icon = Svg(svg_file=icon_file_from_name("wind"), size=14)
         self.wind_icon.add_style_class("weather-icon")
-        self.left_col.add(Box(children=[self.wind_icon, self.wind], orientation="horizontal", spacing=2))
+        self.left_col.add(
+            Box(
+                children=[self.wind_icon, self.wind],
+                orientation="horizontal",
+                spacing=2,
+            )
+        )
 
         # Center: big icon + label (keep label for today)
         self.center_col = Box(orientation="v", spacing=6, h_expand=True)
         self.today_icon = Svg(svg_file=icon_file_from_name("cloud"), size=34)
         self.today_icon.add_style_class("weather-icon")
-        self.today_text = Label(name="weather-popup-now", label="--")  # e.g. "Partly cloudy · 9℃"
+        self.today_text = Label(
+            name="weather-popup-now", label="--"
+        )  # e.g. "Partly cloudy · 9℃"
         self.center_col.add(self.today_icon)
         self.center_col.add(self.today_text)
 
@@ -116,7 +126,13 @@ class WeatherPopupView(Box):
         self.right_col.add(self.sunset)
         self.water_drop_icon = Svg(svg_file=icon_file_from_name("water_drop"), size=14)
         self.water_drop_icon.add_style_class("weather-icon")
-        self.right_col.add(Box(children=[self.water_drop_icon, self.precip], orientation="horizontal", spacing= 2))
+        self.right_col.add(
+            Box(
+                children=[self.water_drop_icon, self.precip],
+                orientation="horizontal",
+                spacing=2,
+            )
+        )
 
         self.today_row.add(self.left_col)
         self.today_row.add(self.center_col)
@@ -127,7 +143,7 @@ class WeatherPopupView(Box):
         # --- FORECAST (J+1 / J+2 / J+3) ---
         self.forecast_row = Box(orientation="h", spacing=12)
 
-        self.forecast_cols: list[dict] = []
+        self.forecast_cols: list[dict[str, Any]] = []
         for i in range(2):
             col = Box(orientation="v", spacing=6, h_expand=True)
             if i == 0:
@@ -228,6 +244,7 @@ class WeatherPopupView(Box):
     def on_before_show(self):
         self.update(self.weather.data)
 
+
 def tag_from_wcode(wcode) -> str:
     icon_name = icon_name_from_wcode(wcode)
     return ICON_NAME_TO_TAG.get(icon_name, "Unknown")
@@ -255,12 +272,12 @@ def icon_file_from_name(name: str) -> str:
         "snowing_heavy": f"{base}/snowing_heavy.svg",
         "weather_hail": f"{base}/weather_hail.svg",
         "water_drop": f"{base}/water_drop.svg",
-        "wind": f"{base}/wind.svg"
+        "wind": f"{base}/wind.svg",
     }
     return mapping.get(name, f"{base}/cloud.svg")
 
 
-def _fmt_day(day: dict, temp_unit) -> str:
+def _fmt_day(day: dict[str, Any], temp_unit) -> str:
     icon = icon_name_from_wcode(day.get("wCode"))
     tag = tag_from_wcode(day.get("wCode"))
 
@@ -270,6 +287,7 @@ def _fmt_day(day: dict, temp_unit) -> str:
     # compact column like: clear_day  2–8℃  Clear
     col = f"{icon}  {tmin}–{tmax}{temp_unit}  {tag}"
     return col
+
 
 class WeatherWidget(PopupWidget):
     def __init__(self, weather: WeatherService, **kwargs):
@@ -298,7 +316,7 @@ class WeatherWidget(PopupWidget):
             return
         self.temp.set_label(str(data.get("temp", "--")) + data.get("temp_unit", "°c"))
         try:
-            self.icon.set_label(icon_name_from_wcode(data["wCode"]))
+            self.icon.set_label(icon_name_from_wcode(data.get("wCode")))
         except Exception:
             raise
 
@@ -324,5 +342,5 @@ class WeatherIcon(Label):
             style="""
     font-family: "Material Symbols Rounded";
     font-size: 16px;
-"""
-)
+""",
+        )

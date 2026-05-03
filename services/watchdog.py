@@ -7,6 +7,7 @@ import os
 import re
 from collections import Counter
 
+
 class MainLoopStallWatchdog:
     def __init__(self, threshold_ms=200, cooldown_ms=800, print_top_n=5):
         self.threshold_s = threshold_ms / 1000.0
@@ -54,11 +55,11 @@ class MainLoopStallWatchdog:
                 m = re.search(r'  File "([^"]+)", line (\d+) in ([^\n]+)', b)
                 if m:
                     path, line, fn = m.group(1), m.group(2), m.group(3)
-                    return f'{path}:{line} in {fn}'
+                    return f"{path}:{line} in {fn}"
         m = re.search(r'  File "([^"]+)", line (\d+) in ([^\n]+)', text)
         if m:
             path, line, fn = m.group(1), m.group(2), m.group(3)
-            return f'{path}:{line} in {fn}'
+            return f"{path}:{line} in {fn}"
         return None
 
     def _dump(self, gap_s: float):
@@ -68,12 +69,20 @@ class MainLoopStallWatchdog:
             self._culprits[culprit] += 1
 
         ts = datetime.datetime.now().strftime("%H:%M:%S:%f")
-        print(f"{ts} STALL gap={gap_s*1000:.1f}ms culprit={culprit}", file=sys.stderr, flush=True)
+        print(
+            f"{ts} STALL gap={gap_s*1000:.1f}ms culprit={culprit}",
+            file=sys.stderr,
+            flush=True,
+        )
         print(text, file=sys.stderr, flush=True)
 
         top = self._culprits.most_common(self.print_top_n)
         if top:
-            print(f"{ts} stall culprits top{self.print_top_n}:", file=sys.stderr, flush=True)
+            print(
+                f"{ts} stall culprits top{self.print_top_n}:",
+                file=sys.stderr,
+                flush=True,
+            )
             for k, v in top:
                 print(f"  {v:4d}  {k}", file=sys.stderr, flush=True)
 
@@ -85,6 +94,7 @@ class MainLoopStallWatchdog:
             if gap > self.threshold_s and (now - self._last_dump) >= self.cooldown_s:
                 self._last_dump = now
                 self._dump(gap)
+
 
 watchdog = MainLoopStallWatchdog(threshold_ms=200, cooldown_ms=800)
 watchdog.start()

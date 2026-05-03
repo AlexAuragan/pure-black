@@ -2,6 +2,7 @@ import os
 import subprocess
 import threading
 from threading import Timer
+from typing import Any
 
 from fabric.core.service import Property, Service, Signal
 from gi.repository import Gio, GLib
@@ -10,12 +11,13 @@ from loguru import logger
 from services.hyprland import HyprlandManager
 
 
-class BrightnessStream(Service):
+class BrightnessStream(Service[Any, Any]):
     @Signal
-    def changed(self) -> None:
-        ...
+    def changed(self) -> None: ...
 
-    def __init__(self, name: str, device_path: str, is_external: bool = False, **kwargs):
+    def __init__(
+        self, name: str, device_path: str, is_external: bool = False, **kwargs
+    ):
         self._model = kwargs.pop("model", None)
         self._mfg = kwargs.pop("mfg", None)
         self._serial = kwargs.pop("serial", None)
@@ -25,7 +27,9 @@ class BrightnessStream(Service):
         self._device_path = device_path
         self._is_external = is_external
         self._debounce_timer = None
-        self._cached_brightness = 50.0 if is_external else self._get_initial_brightness()
+        self._cached_brightness = (
+            50.0 if is_external else self._get_initial_brightness()
+        )
         if not self._is_external:
             self._bus = Gio.bus_get_sync(Gio.BusType.SYSTEM, None)
 
@@ -73,11 +77,18 @@ class BrightnessStream(Service):
 
         self.changed()
         self.notify("screen-brightness")
+
     def _get_initial_brightness(self) -> float:
         try:
             if self._is_external:
                 cmd = f"ddcutil getvcp 10 --bus {self._device_path} --terse"
-                output = subprocess.check_output(cmd.split(), stderr=subprocess.DEVNULL, timeout=2).decode().split()
+                output = (
+                    subprocess.check_output(
+                        cmd.split(), stderr=subprocess.DEVNULL, timeout=2
+                    )
+                    .decode()
+                    .split()
+                )
                 return float(output[3])
             else:
                 return self._read_sysfs()
@@ -92,24 +103,45 @@ class BrightnessStream(Service):
             max_brightness = int(file.read().strip())
         return (current_brightness / max_brightness) * 100
 
-    def _apply_internal_brightness(self, value: int):
+    def _apply_internal_brightness(self, value: float):
         try:
-            variant = GLib.Variant("(ssu)", ("backlight", self._device_path, int(value)))
+            variant = GLib.Variant(
+                "(ssu)", ("backlight", self._device_path, int(value))
+            )
             self._bus.call_sync(
-                "org.freedesktop.login1", "/org/freedesktop/login1",
-                "org.freedesktop.login1.Manager", "SetBrightness",
-                variant, None, Gio.DBusCallFlags.NONE, -1, None
+                "org.freedesktop.login1",
+                "/org/freedesktop/login1",
+                "org.freedesktop.login1.Manager",
+                "SetBrightness",
+                variant,
+                None,
+                Gio.DBusCallFlags.NONE,
+                -1,
+                None,
             )
         except Exception:
-            subprocess.Popen(["brightnessctl", "-d", self._device_path, "s", f"{value}%"])
+            subprocess.Popen(
+                ["brightnessctl", "-d", self._device_path, "s", f"{value}%"]
+            )
 
     def _apply_external_brightness(self, value: int):
         bus_number = self._device_path.replace("/dev/i2c-", "")
         try:
             subprocess.run(
-                ["ddcutil", "setvcp", "10", str(int(value)), "--bus", bus_number,
-                 "--noverify", "--sleep-multiplier", ".1"],
-                stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=5
+                [
+                    "ddcutil",
+                    "setvcp",
+                    "10",
+                    str(int(value)),
+                    "--bus",
+                    bus_number,
+                    "--noverify",
+                    "--sleep-multiplier",
+                    ".1",
+                ],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                timeout=5,
             )
         except subprocess.TimeoutExpired:
             logger.error("ddcutil command timed out")
@@ -117,14 +149,12 @@ class BrightnessStream(Service):
             logger.error(f"Error applying brightness: {exception}")
 
 
-class Brightness(Service):
+class Brightness(Service[Any, Any]):
     @Signal
-    def changed(self) -> None:
-        ...
+    def changed(self) -> None: ...
 
     @Signal
-    def screen_added(self) -> None:
-        ...
+    def screen_added(self) -> None: ...
 
     def __init__(self, hyprland: HyprlandManager, **kwargs):
         super().__init__(**kwargs)
@@ -132,7 +162,7 @@ class Brightness(Service):
         self._screens: list[BrightnessStream] = []
         self._hyprland.connect("notify::monitors", self._on_monitors_changed)
         self._scan_source_id: int | None = None
-        self._last_monitors_sig: tuple | None = None
+        self._last_monitors_sig: tuple[Any, ...] | None = None
         self._last_ddc_scan_ts = 0.0
         self._scan_thread_running = False
         self._scan_requested = False
@@ -145,7 +175,11 @@ class Brightness(Service):
     def scan_screens(self):
         existing_streams = {}
         for stream in self._screens:
-            key = (stream.serial or stream._device_path) if stream.is_external else stream._device_path
+            key = (
+                (stream.serial or stream._device_path)
+                if stream.is_external
+                else stream._device_path
+            )
             existing_streams[key] = stream
         new_screens = []
         try:
@@ -154,20 +188,22 @@ class Brightness(Service):
                     if backlight_device in existing_streams:
                         new_screens.append(existing_streams[backlight_device])
                     else:
-                        new_screens.append(BrightnessStream(
-                            name=f"Internal: {backlight_device}",
-                            device_path=backlight_device,
-                            is_external=False
-                        ))
+                        new_screens.append(
+                            BrightnessStream(
+                                name=f"Internal: {backlight_device}",
+                                device_path=backlight_device,
+                                is_external=False,
+                            )
+                        )
         except Exception:
             pass
         try:
             output = subprocess.check_output(
                 ["ddcutil", "detect", "--terse", "--sleep-multiplier", ".1"],
-                stderr=subprocess.DEVNULL
+                stderr=subprocess.DEVNULL,
             ).decode(errors="replace")
-            displays: list[dict] = []
-            current_display: dict = {}
+            displays: list[dict[str, Any]] = []
+            current_display: dict[str, Any] = {}
 
             def flush_display():
                 nonlocal current_display
@@ -189,11 +225,21 @@ class Brightness(Service):
                 if line_lower.startswith("mfg id:"):
                     current_display["mfg"] = line.split(":", 1)[1].strip()
                     continue
-                if line_lower.startswith(("model:", "model name:", "display model:", "display model name:",
-                                          "monitor:", "monitor name:")):
+                if line_lower.startswith(
+                    (
+                        "model:",
+                        "model name:",
+                        "display model:",
+                        "display model name:",
+                        "monitor:",
+                        "monitor name:",
+                    )
+                ):
                     current_display["model"] = line.split(":", 1)[1].strip()
                     continue
-                if line_lower.startswith(("serial", "serial number:", "serial no:", "sn:")):
+                if line_lower.startswith(
+                    ("serial", "serial number:", "serial no:", "sn:")
+                ):
                     current_display["serial"] = line.split(":", 1)[1].strip()
                     continue
             flush_display()
@@ -210,29 +256,37 @@ class Brightness(Service):
                     new_screens.append(existing_streams[key])
                 else:
                     pretty_name = model if not mfg else f"{model} ({mfg})"
-                    new_screens.append(BrightnessStream(
-                        name=pretty_name, device_path=bus, is_external=True,
-                        model=model, mfg=mfg, serial=serial
-                    ))
+                    new_screens.append(
+                        BrightnessStream(
+                            name=pretty_name,
+                            device_path=bus,
+                            is_external=True,
+                            model=model,
+                            mfg=mfg,
+                            serial=serial,
+                        )
+                    )
         except Exception as exception:
             logger.warning(f"DDC Scan failed: {exception}")
         self._screens = new_screens
         self.changed()
         self.notify("screens")
 
-    def _monitors_signature(self) -> tuple:
+    def _monitors_signature(self) -> tuple[Any, ...]:
         # Only include fields that reflect physical monitor topology
         # (name/description/model/serial are stable; active workspace is NOT)
         mons = self._hyprland.monitors or {}
         items = []
         for mid, m in mons.items():
-            items.append((
-                int(mid),
-                (m.get("name") or ""),
-                (m.get("description") or ""),
-                (m.get("model") or ""),
-                (m.get("serial") or ""),
-            ))
+            items.append(
+                (
+                    int(mid),
+                    (m.get("name") or ""),
+                    (m.get("description") or ""),
+                    (m.get("model") or ""),
+                    (m.get("serial") or ""),
+                )
+            )
         items.sort()
         return tuple(items)
 
@@ -265,10 +319,14 @@ class Brightness(Service):
         # snapshot current streams so the worker doesn't touch GTK objects
         existing = {}
         for stream in self._screens:
-            key = (stream.serial or stream._device_path) if stream.is_external else stream._device_path
+            key = (
+                (stream.serial or stream._device_path)
+                if stream.is_external
+                else stream._device_path
+            )
             existing[key] = stream
 
-        def worker(existing_streams_snapshot: dict):
+        def worker(existing_streams_snapshot: dict[str, Any]):
             try:
                 result = self._scan_screens_compute(existing_streams_snapshot)
             except Exception as e:
@@ -278,8 +336,8 @@ class Brightness(Service):
         threading.Thread(target=worker, args=(existing,), daemon=True).start()
         return False
 
-    def _scan_screens_compute(self, existing_streams: dict):
-        new_screens: list[BrightnessStream | tuple] = []
+    def _scan_screens_compute(self, existing_streams: dict[str, Any]):
+        new_screens: list[BrightnessStream | tuple[Any, ...]] = []
 
         if os.path.exists("/sys/class/backlight"):
             for backlight_device in os.listdir("/sys/class/backlight"):
@@ -293,8 +351,8 @@ class Brightness(Service):
             stderr=subprocess.DEVNULL,
         ).decode(errors="replace")
 
-        displays: list[dict] = []
-        current: dict = {}
+        displays: list[dict[str, Any]] = []
+        current: dict[str, Any] = {}
 
         def flush():
             nonlocal current
@@ -325,7 +383,11 @@ class Brightness(Service):
             if ll.startswith("drm connector:"):
                 drm_connector = line.split(":", 1)[1].strip()
                 current["drm_connector"] = drm_connector
-                current["connector_name"] = drm_connector.split("-", 1)[1] if "-" in drm_connector else drm_connector
+                current["connector_name"] = (
+                    drm_connector.split("-", 1)[1]
+                    if "-" in drm_connector
+                    else drm_connector
+                )
                 continue
 
             if ll.startswith("drm_connector_id:"):
@@ -337,9 +399,15 @@ class Brightness(Service):
                 current["monitor_raw"] = monitor_value
 
                 parts = monitor_value.split(":", 2)
-                current["mfg"] = parts[0].strip() if len(parts) > 0 and parts[0].strip() else None
-                current["model"] = parts[1].strip() if len(parts) > 1 and parts[1].strip() else None
-                current["serial"] = parts[2].strip() if len(parts) > 2 and parts[2].strip() else None
+                current["mfg"] = (
+                    parts[0].strip() if len(parts) > 0 and parts[0].strip() else None
+                )
+                current["model"] = (
+                    parts[1].strip() if len(parts) > 1 and parts[1].strip() else None
+                )
+                current["serial"] = (
+                    parts[2].strip() if len(parts) > 2 and parts[2].strip() else None
+                )
                 continue
 
         flush()
@@ -368,18 +436,23 @@ class Brightness(Service):
             if key in existing_streams:
                 new_screens.append(existing_streams[key])
             else:
-                new_screens.append(("create_external", {
-                    "bus": bus,
-                    "model": model,
-                    "mfg": mfg,
-                    "serial": serial,
-                    "connector_name": connector_name,
-                }))
+                new_screens.append(
+                    (
+                        "create_external",
+                        {
+                            "bus": bus,
+                            "model": model,
+                            "mfg": mfg,
+                            "serial": serial,
+                            "connector_name": connector_name,
+                        },
+                    )
+                )
 
         return new_screens
 
-    def _scan_screens_compute(self, existing_streams: dict):
-        new_screens: list[BrightnessStream | tuple] = []
+    def _scan_screens_compute(self, existing_streams: dict[str, Any]):
+        new_screens: list[BrightnessStream | tuple[Any, ...]] = []
 
         if os.path.exists("/sys/class/backlight"):
             for backlight_device in os.listdir("/sys/class/backlight"):
@@ -393,8 +466,8 @@ class Brightness(Service):
             stderr=subprocess.DEVNULL,
         ).decode(errors="replace")
 
-        displays: list[dict] = []
-        current: dict = {}
+        displays: list[dict[str, Any]] = []
+        current: dict[str, Any] = {}
 
         def flush():
             nonlocal current
@@ -425,7 +498,11 @@ class Brightness(Service):
             if ll.startswith("drm connector:"):
                 drm_connector = line.split(":", 1)[1].strip()
                 current["drm_connector"] = drm_connector
-                current["connector_name"] = drm_connector.split("-", 1)[1] if "-" in drm_connector else drm_connector
+                current["connector_name"] = (
+                    drm_connector.split("-", 1)[1]
+                    if "-" in drm_connector
+                    else drm_connector
+                )
                 continue
 
             if ll.startswith("drm_connector_id:"):
@@ -437,9 +514,15 @@ class Brightness(Service):
                 current["monitor_raw"] = monitor_value
 
                 parts = monitor_value.split(":", 2)
-                current["mfg"] = parts[0].strip() if len(parts) > 0 and parts[0].strip() else None
-                current["model"] = parts[1].strip() if len(parts) > 1 and parts[1].strip() else None
-                current["serial"] = parts[2].strip() if len(parts) > 2 and parts[2].strip() else None
+                current["mfg"] = (
+                    parts[0].strip() if len(parts) > 0 and parts[0].strip() else None
+                )
+                current["model"] = (
+                    parts[1].strip() if len(parts) > 1 and parts[1].strip() else None
+                )
+                current["serial"] = (
+                    parts[2].strip() if len(parts) > 2 and parts[2].strip() else None
+                )
                 continue
 
         flush()
@@ -468,13 +551,18 @@ class Brightness(Service):
             if key in existing_streams:
                 new_screens.append(existing_streams[key])
             else:
-                new_screens.append(("create_external", {
-                    "bus": bus,
-                    "model": model,
-                    "mfg": mfg,
-                    "serial": serial,
-                    "connector_name": connector_name,
-                }))
+                new_screens.append(
+                    (
+                        "create_external",
+                        {
+                            "bus": bus,
+                            "model": model,
+                            "mfg": mfg,
+                            "serial": serial,
+                            "connector_name": connector_name,
+                        },
+                    )
+                )
 
         return new_screens
 
@@ -509,9 +597,9 @@ class Brightness(Service):
                 return stream
 
             if stream_model and (
-                    stream_model in hypr_model
-                    or stream_model in hypr_description
-                    or hypr_model in stream_model
+                stream_model in hypr_model
+                or stream_model in hypr_description
+                or hypr_model in stream_model
             ):
                 return stream
 
@@ -529,7 +617,11 @@ class Brightness(Service):
         new_screens: list[BrightnessStream] = []
         existing_streams = {}
         for stream in self._screens:
-            key = (stream.serial or stream._device_path) if stream.is_external else stream._device_path
+            key = (
+                (stream.serial or stream._device_path)
+                if stream.is_external
+                else stream._device_path
+            )
             existing_streams[key] = stream
 
         for item in result:
@@ -540,11 +632,13 @@ class Brightness(Service):
             tag, payload = item
             if tag == "create_internal":
                 backlight_device = payload
-                new_screens.append(BrightnessStream(
-                    name=f"Internal: {backlight_device}",
-                    device_path=backlight_device,
-                    is_external=False,
-                ))
+                new_screens.append(
+                    BrightnessStream(
+                        name=f"Internal: {backlight_device}",
+                        device_path=backlight_device,
+                        is_external=False,
+                    )
+                )
             elif tag == "create_external":
                 info = payload
                 bus = info["bus"]
@@ -553,15 +647,17 @@ class Brightness(Service):
                 serial = info.get("serial")
                 connector_name = info.get("connector_name")
                 pretty_name = model if not mfg else f"{model} ({mfg})"
-                new_screens.append(BrightnessStream(
-                    name=pretty_name,
-                    device_path=bus,
-                    is_external=True,
-                    model=model,
-                    mfg=mfg,
-                    serial=serial,
-                    connector_name=connector_name,
-                ))
+                new_screens.append(
+                    BrightnessStream(
+                        name=pretty_name,
+                        device_path=bus,
+                        is_external=True,
+                        model=model,
+                        mfg=mfg,
+                        serial=serial,
+                        connector_name=connector_name,
+                    )
+                )
 
         self._screens = new_screens
         self.changed()

@@ -30,9 +30,15 @@ class WorkspaceIndicator(Box):
     Place it in an overlay above your icons, top-left aligned, and move it by setting margins.
     """
 
-    def __init__(self, diameter: int, duration_ms: int, ws_tray: "HyprlandWorkspacesTray", **kwargs):
+    def __init__(
+        self,
+        diameter: int,
+        duration_ms: int,
+        ws_tray: "HyprlandWorkspacesTray",
+        **kwargs,
+    ):
         super().__init__(**kwargs)
-        self.ws_id = None
+        self.ws_id: int | None = None
         self.ws_tray = ws_tray
         self.base_d = int(diameter)
         self.duration_ms = int(duration_ms)
@@ -72,7 +78,6 @@ class WorkspaceIndicator(Box):
         if self._anim_source_id is not None:
             GLib.Source.remove(self._anim_source_id)
             self._anim_source_id = None
-
 
         # displacement
         dx = x - self.cx
@@ -147,7 +152,6 @@ class WorkspaceIndicator(Box):
 
         self._anim_source_id = GLib.timeout_add(16, self._tick)
 
-
     def _apply_geometry(self, cx: float, cy: float, stretch: float, axis: str):
         # stretch the blob along the travel axis and slightly squash perpendicular
         d = float(self.base_d)
@@ -177,6 +181,7 @@ class WorkspaceIndicator(Box):
         self.set_margin_start(left)
         self.set_margin_top(top)
 
+
 class HyprlandWorkspaceIcon(EventBox):
     def __init__(self, idx: int, hyprland: HyprlandManager, monitor_id: int, **kwargs):
         self.id = idx
@@ -184,16 +189,21 @@ class HyprlandWorkspaceIcon(EventBox):
         self.hyprland = hyprland
         self.app_icons: dict[str, str] = {}
         self._pixbuf_cache: dict[str, Pixbuf] = {}
-        self.last_client_address = self.hyprland.workspaces.get(self.id, {}).get("last_window") or ""
+        self.last_client_address = (
+            self.hyprland.workspaces.get(self.id, {}).get("last_window") or ""
+        )
 
         self.image = Image(**kwargs)
-        self.label = Label(label=WORKSPACE_LABELS.get(idx, WORKSPACE_LABELS[0]), style_classes="workspace_label")
+        self.label = Label(
+            label=WORKSPACE_LABELS.get(idx, WORKSPACE_LABELS[0]),
+            style_classes="workspace_label",
+        )
         self.content = Stack(children=[self.image, self.label])
         self.content.set_visible_child(self.label)
 
         super().__init__(
             child=self.content,
-            events=["button-press", "enter-notify", "leave-notify"], # type:ignore
+            events=["button-press", "enter-notify", "leave-notify"],  # type: ignore
         )
         self.add_style_class("workspace-button-box")
         self.add_style_class("inactive")
@@ -203,7 +213,9 @@ class HyprlandWorkspaceIcon(EventBox):
         self.connect("leave-notify-event", self.on_hover_exit)
 
         self._on_workspace_icons_notify(hyprland, self.id)
-        self.hyprland.connect("workspace-icons-changed", self._on_workspace_icons_notify)
+        self.hyprland.connect(
+            "workspace-icons-changed", self._on_workspace_icons_notify
+        )
 
     def _on_workspace_icons_notify(self, hyprland: HyprlandManager, workspace_id: int):
         if workspace_id != self.id:
@@ -240,50 +252,65 @@ class HyprlandWorkspaceIcon(EventBox):
     def monitor_id(self):
         return self._monitor_id
 
+
 class HyprlandWorkspaceDummyIcon(EventBox):
     def __init__(self):
         self.label = Label(label=WORKSPACE_LABELS[0], style_classes="workspace_label")
         self.image = Image()
         self.content = Stack(children=[self.image, self.label])
-        super().__init__(
-            child=self.content
-        )
+        super().__init__(child=self.content)
         self.add_style_class("workspace-button-box")
         self.add_style_class("workspace-color-indicator")
 
 
 class HyprlandWorkspacesTray(Overlay):
-    def __init__(self, hyprland: HyprlandManager, monitor_id: int, two_rows=True, **kwargs):
+    def __init__(
+        self, hyprland: HyprlandManager, monitor_id: int, two_rows=True, **kwargs
+    ):
         self.hyprland = hyprland
         self._monitor_id = monitor_id
         # n = max(self.hyprland.workspaces.keys())
         n = 10
-        # TODO add the management of dynamic workspaces 
+        # TODO add the management of dynamic workspaces
         self.icons: dict[int, HyprlandWorkspaceIcon] = {}
 
         if two_rows:
             first_row = Box(
-                children=[self.make_icon(i) for i in range(1, (n+1)//2 + 1)],
+                children=[self.make_icon(i) for i in range(1, (n + 1) // 2 + 1)],
                 style_classes=["workspace-row"],
                 spacing=2,
             )
             second_row = Box(
-                children=[self.make_icon(i) for i in range((n+1)//2 + 1, n + 1)],
+                children=[self.make_icon(i) for i in range((n + 1) // 2 + 1, n + 1)],
                 style_classes=["workspace-row"],
                 spacing=2,
             )
             dummy_first_row = Box(
-                children=[HyprlandWorkspaceDummyIcon() for i in range(1, (n+1)//2 + 1)],
+                children=[
+                    HyprlandWorkspaceDummyIcon() for i in range(1, (n + 1) // 2 + 1)
+                ],
                 style_classes=["workspace-row"],
                 spacing=2,
             )
             dummy_second_row = Box(
-                children=[HyprlandWorkspaceDummyIcon() for i in range((n+1)//2 + 1, n + 1)],
+                children=[
+                    HyprlandWorkspaceDummyIcon() for i in range((n + 1) // 2 + 1, n + 1)
+                ],
                 style_classes=["workspace-row"],
                 spacing=2,
             )
-            content = Box(children=[first_row, second_row], orientation="v", spacing=2, css_name="workspace")
-            content_background = Box(children=[dummy_first_row, dummy_second_row], orientation="v", spacing=2, css_name="workspace")
+            content = Box(
+                children=[first_row, second_row],
+                orientation="v",
+                spacing=2,
+                css_name="workspace",
+            )
+            content_background = Box(
+                children=[dummy_first_row, dummy_second_row],
+                orientation="v",
+                spacing=2,
+                css_name="workspace",
+            )
         else:
             content = Box(
                 children=[self.make_icon(i) for i in range(1, n + 1)],
@@ -298,23 +325,38 @@ class HyprlandWorkspacesTray(Overlay):
                 spacing=2,
             )
 
-
         left_corner = Corner(
-            orientation="top-right", size=12, style_classes=["shape", "top-corner"],
-            v_align="start", v_expand=False # Needed to hide the overflow of the shape next to a rounded corner
+            orientation="top-right",
+            size=12,
+            style_classes=["shape", "top-corner"],
+            v_align="start",
+            v_expand=False,  # Needed to hide the overflow of the shape next to a rounded corner
         )
         right_corner = Corner(
-            orientation="top-left", size=12, style_classes=["shape", "top-corner"],
-            v_align="start", v_expand=False
+            orientation="top-left",
+            size=12,
+            style_classes=["shape", "top-corner"],
+            v_align="start",
+            v_expand=False,
         )
-        left_cornerh = Corner(orientation="top-right", size=12, style_classes=["hidden"]) # Same corners but hidden
-        right_cornerh = Corner(orientation="top-left", size=12, style_classes=["hidden"])
-        self.indicator = WorkspaceIndicator(diameter=20, duration_ms=360, ws_tray = self)
+        left_cornerh = Corner(
+            orientation="top-right", size=12, style_classes=["hidden"]
+        )  # Same corners but hidden
+        right_cornerh = Corner(
+            orientation="top-left", size=12, style_classes=["hidden"]
+        )
+        self.indicator = WorkspaceIndicator(diameter=20, duration_ms=360, ws_tray=self)
         content.set_name("workspaces-content")
         content_background.set_name("workspaces-background")
         super().__init__(
-            child=Box(children=[left_corner, content_background, right_corner], orientation="h"),
-            overlays=[self.indicator, Box(children=[left_cornerh, content, right_cornerh])],
+            child=Box(
+                children=[left_corner, content_background, right_corner],
+                orientation="h",
+            ),
+            overlays=[
+                self.indicator,
+                Box(children=[left_cornerh, content, right_cornerh]),
+            ],
             **kwargs,
         )
         self.add_style_class("top-widget")
@@ -327,7 +369,6 @@ class HyprlandWorkspacesTray(Overlay):
     def _heartbeat(self):
         watchdog.beat()
         return True
-
 
     def make_icon(self, i: int) -> HyprlandWorkspaceIcon:
         icon = HyprlandWorkspaceIcon(i, self.hyprland, monitor_id=self.monitor_id)
@@ -383,7 +424,10 @@ class HyprlandWorkspacesTray(Overlay):
         local_y = alloc.height / 2
 
         # Translate to overlay coords
-        x, y = icon.translate_coordinates(self, int(local_x), int(local_y))
+        coords = icon.translate_coordinates(self, int(local_x), int(local_y))
+        if coords is None:
+            return
+        x, y = coords
 
         self.indicator.ws_tray = self
         self.indicator.ws_id = ws_id

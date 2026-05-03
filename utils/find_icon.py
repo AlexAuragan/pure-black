@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+import configparser
 import os
 import re
-import configparser
 from dataclasses import dataclass
 from difflib import SequenceMatcher
 from pathlib import Path
@@ -28,6 +28,7 @@ REGEX_SUBSTITUTIONS: list[tuple[re.Pattern[str], str]] = [
     (re.compile(r"gcr\.prompter"), "system-lock-screen"),
 ]
 
+
 @dataclass(frozen=True)
 class DesktopEntry:
     name: str
@@ -39,7 +40,9 @@ class DesktopEntry:
 
 def _xdg_data_dirs() -> list[Path]:
     data_home = Path(os.environ.get("XDG_DATA_HOME", str(Path.home() / ".local/share")))
-    data_dirs = os.environ.get("XDG_DATA_DIRS", "/usr/local/share:/usr/share").split(":")
+    data_dirs = os.environ.get("XDG_DATA_DIRS", "/usr/local/share:/usr/share").split(
+        ":"
+    )
     return [data_home] + [Path(p) for p in data_dirs if p]
 
 
@@ -252,7 +255,13 @@ def guess_icon_path_from_window_class(window_class: str | None) -> str | None:
 
     # First: try direct icon-name resolution with the same guesses (fast)
     s = _apply_substitutions(window_class.strip())
-    for cand in (s, s.lower(), _kebab_normalize(s), s.split(".")[-1], s.split(".")[-1].lower()):
+    for cand in (
+        s,
+        s.lower(),
+        _kebab_normalize(s),
+        s.split(".")[-1],
+        s.split(".")[-1].lower(),
+    ):
         p = _resolve_icon_path(cand)
         if p:
             return p
@@ -263,7 +272,9 @@ def guess_icon_path_from_window_class(window_class: str | None) -> str | None:
         p = _resolve_icon_path(entry.icon)
         if p:
             return p
-    logger.warning(f"[Icon] Couldn't find an icon for {entry}")
+        logger.warning(f"[Icon] Couldn't find an icon for {entry}")
+    else:
+        logger.warning(f"[Icon] No descktop entry for {window_class!r}")
     return None
 
 

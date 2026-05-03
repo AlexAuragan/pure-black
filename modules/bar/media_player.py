@@ -19,6 +19,7 @@ from gi.repository import Gdk
 
 BASE_ICON_PATH = Path("styles") / "pure_black" / "icons" / "pc"
 
+
 class Application(EventBox):
     def __init__(self, app: AudioStream):
         self.name: str = app.name
@@ -30,9 +31,8 @@ class Application(EventBox):
         gicon: Gio.ThemedIcon = self.stream.get_gicon()
         names = gicon.get_names()
 
-        super().__init__(
-            child=Image(icon_name=names[0], icon_size=24)
-        )
+        super().__init__(child=Image(icon_name=names[0], icon_size=24))
+
 
 class ApplicationList(PopupWindow):
     def __init__(self, audio_service: Audio):
@@ -47,15 +47,13 @@ class ApplicationList(PopupWindow):
         )
         self.show()
 
-
     def on_applications_set(self, audio: Audio, event: ParamSpecBoxed):
         apps = []
         for app in audio.applications:
-            apps.append(
-                Application(app)
-            )
+            apps.append(Application(app))
         self.applications = apps
         self.box.children = apps
+
 
 class MediaIcon(Box):
     def __init__(self, audio_service: Audio, volume=0):
@@ -67,7 +65,7 @@ class MediaIcon(Box):
             all_visible=True,
             orientation="vertical",
             spacing=4,
-            v_align="center"
+            v_align="center",
         )
 
     def volume_to_path(self):
@@ -85,13 +83,14 @@ class MediaPlayer(PopupWidget):
             popup_window=self.popup_window,
             all_visible=True,
             events="scroll",
-            interactive=True
+            interactive=True,
         )
         self.add_style_class("top-widget")
 
-        self.audio_service.connect("notify::applications", self.popup_window.on_applications_set)
+        self.audio_service.connect(
+            "notify::applications", self.popup_window.on_applications_set
+        )
         self.connect("button-press-event", self.on_button_press)
-
 
     @staticmethod
     def on_button_press(widget, event):

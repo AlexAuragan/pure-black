@@ -22,7 +22,9 @@ class StreamRow(Box):
         if show_app_id and stream.application_id:
             title = f"{title}  —  {stream.application_id}"
 
-        self.label = Label(label=title, name="stream-label", all_visible=True, h_expand=True)
+        self.label = Label(
+            label=title, name="stream-label", all_visible=True, h_expand=True
+        )
 
         self.mute_btn = Button(
             label="Mute" if not stream.muted else "Unmute",

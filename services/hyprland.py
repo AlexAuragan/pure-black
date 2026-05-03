@@ -1,10 +1,10 @@
 import json
-from typing import Any, TypedDict
+from typing import TYPE_CHECKING, Any, TypedDict
 
 from fabric import Signal
-from fabric.core.service import Service, Property
-from fabric.utils.helpers import idle_add
+from fabric.core.service import Property, Service
 from fabric.hyprland import Hyprland, HyprlandReply
+from fabric.utils.helpers import idle_add
 from gi.repository.GdkPixbuf import Pixbuf
 
 from utils.find_icon import guess_icon_path_from_window_class
@@ -18,6 +18,7 @@ def _decode_json(reply: HyprlandReply) -> Any | None:
         return json.loads(raw.decode("utf-8", errors="replace"))
     except json.JSONDecodeError:
         return None
+
 
 class Workspace(TypedDict):
     id: str | int
@@ -91,13 +92,14 @@ class ActiveWindow(TypedDict):
     pinned: bool
     fullscreen: int
     fullscreenClient: int
-    grouped: list
-    tags: list
+    grouped: list[str]
+    tags: list[str]
     swallowing: str
     focusHistoryID: int
     inhibitingIdle: bool
     xdgTag: str
     xdgDescription: str
+
 
 class Client(TypedDict):
     address: str
@@ -118,13 +120,14 @@ class Client(TypedDict):
     pinned: bool
     fullscreen: int | bool
     fullscreen_client: int | bool
-    grouped: list
-    tags: list
+    grouped: list[str]
+    tags: list[str]
     swallowing: str
     focus_history_id: int
     inhibiting_idle: bool
     xdg_tag: str
     xdg_description: str
+
 
 class WorkspaceIcon(TypedDict):
     workspace_id: int
@@ -133,7 +136,7 @@ class WorkspaceIcon(TypedDict):
     icon_pixbuf: Pixbuf | None
 
 
-class HyprlandManager(Service):
+class HyprlandManager(Service[Any, Any]):
     """
     Cache layer on top of the official Hyprland transport.
 
@@ -142,40 +145,48 @@ class HyprlandManager(Service):
     - exposes bindable properties similar to your previous manager
     """
 
-    @Property(object, "readable", "workspaces", default_value=None)
-    def workspaces(self):
-        return self._workspaces
+    if TYPE_CHECKING:
+        @property
+        def workspaces(self) -> dict[int, Workspace]: return self._workspaces
 
-    @Property(object, "readable", "monitors", default_value=None)
-    def monitors(self) -> dict[int, Monitor]:
-        return self._monitors
+        @property
+        def monitors(self) -> dict[int, Monitor]: return self._monitors
 
-    @Property(object, "readable", "active_windows", default_value=None)
-    def active_windows(self):
-        return self._active_windows
+        @property
+        def active_windows(self) -> dict[int, ActiveWindow | None]: return self._active_windows
 
-    @Property(object, "readable", "clients", default_value=None)
-    def clients(self):
-        return self._clients
+        @property
+        def clients(self) -> dict[str, Client]: return self._clients
 
-    @Property(object, "readable", "workspace_icons", default_value=None)
-    def workspace_icons(self):
-        return self._workspace_icons
+        @property
+        def workspace_icons(self) -> dict[int, WorkspaceIcon]: return self._workspace_icons
+    else:
+        @Property(object, "readable", "workspaces", default_value=None)
+        def workspaces(self): return self._workspaces
+
+        @Property(object, "readable", "monitors", default_value=None)
+        def monitors(self): return self._monitors
+
+        @Property(object, "readable", "active_windows", default_value=None)
+        def active_windows(self): return self._active_windows
+
+        @Property(object, "readable", "clients", default_value=None)
+        def clients(self): return self._clients
+
+        @Property(object, "readable", "workspace_icons", default_value=None)
+        def workspace_icons(self): return self._workspace_icons
 
     @Signal(name="workspace-icons-changed")
     def workspace_icons_changed(self, workspace_id: int) -> None: ...
 
     @Signal(name="monitor-added")
-    def monitor_added(self, monitor_id: int) -> None:
-        ...
+    def monitor_added(self, monitor_id: int) -> None: ...
 
     @Signal(name="monitor-removed")
-    def monitor_removed(self, monitor_id: int) -> None:
-        ...
+    def monitor_removed(self, monitor_id: int) -> None: ...
 
     def __init__(self, hypr: Hyprland | None = None, **kwargs):
         super().__init__(**kwargs)
-
 
         # transport
         self.hypr = hypr or Hyprland(commands_only=False)
@@ -187,7 +198,7 @@ class HyprlandManager(Service):
         self._clients: dict[str, Client] = {}
         self._workspace_icons: dict[int, WorkspaceIcon] = {}
         self._addr_to_class: dict[str, str] = {}
-        self._class_to_icon: dict[str, Pixbuf] = {}
+        self._class_to_icon: dict[str, Pixbuf | None] = {}
         self._workspace_last_client: dict[int, str | None] = {}
 
         self._pending_workspaces = False
@@ -204,8 +215,6 @@ class HyprlandManager(Service):
     def close(self) -> None:
         pass
 
-
-
     def refresh_all(self) -> None:
         self._apply_workspaces(self.hypr.send_command("j/workspaces"))
         self._apply_monitors(self.hypr.send_command("j/monitors"))
@@ -217,39 +226,39 @@ class HyprlandManager(Service):
         self._schedule_clients_refresh()
 
     def _connect_events(self) -> None:
-        # 1. Topology changes (Workspaces/Monitors)
+        # 1. Topology changes (workspaces/Monitors)
         # we are handling them specifically below to get the IDs.
         for name in (
-                "workspace",
-                "createworkspace",
-                "destroyworkspace",
-                "focusedmon",
+            "workspace",
+            "createworkspace",
+            "destroyworkspace",
+            "focusedmon",
         ):
             self.hypr.connect(f"event::{name}", self._on_topology_event)
 
         # 3. Active window + presentation state
         for name in (
-                "activewindow",
-                "activewindowv2",
-                "windowtitle",
-                "windowtitlev2",
-                "fullscreen",
-                "openwindow",
-                "closewindow",
-                "movewindow",
-                "movewindowv2",
+            "activewindow",
+            "activewindowv2",
+            "windowtitle",
+            "windowtitlev2",
+            "fullscreen",
+            "openwindow",
+            "closewindow",
+            "movewindow",
+            "movewindowv2",
         ):
             self.hypr.connect(f"event::{name}", self._on_activewindow_event)
 
         # 4. Client list changes
         for name in (
-                "changefloatingmode",
-                # Note: open/close/move are already covered for activewindow,
-                # but we also need them to trigger client list refreshes.
-                "openwindow",
-                "closewindow",
-                "movewindow",
-                "movewindowv2",
+            "changefloatingmode",
+            # Note: open/close/move are already covered for activewindow,
+            # but we also need them to trigger client list refreshes.
+            "openwindow",
+            "closewindow",
+            "movewindow",
+            "movewindowv2",
         ):
             self.hypr.connect(f"event::{name}", self._on_clients_event)
 
@@ -319,12 +328,15 @@ class HyprlandManager(Service):
             return None
         if class_ not in self._class_to_icon:
             path = guess_icon_path_from_window_class(class_)
-            pb = Pixbuf.new_from_file_at_scale(
-                filename=path,
-                width=16,
-                height=16,
-                preserve_aspect_ratio=True,
-            )
+            if path:
+                pb = Pixbuf.new_from_file_at_scale(
+                    filename=path,
+                    width=16,
+                    height=16,
+                    preserve_aspect_ratio=True,
+                )
+            else:
+                pb = None
             self._class_to_icon[class_] = pb
         return self._class_to_icon[class_]
 
@@ -374,10 +386,8 @@ class HyprlandManager(Service):
                 "last_client_address": last_addr,
                 "icon_pixbuf": icon_pixbuf,
                 "has_clients": has_clients,
-
             }
             new_icons[ws_id] = wi
-
 
         updated = []
         for key in set(new_icons.keys()) | set(self._workspace_icons.keys()):
@@ -389,7 +399,6 @@ class HyprlandManager(Service):
             for workspace_id in updated:
                 self.emit("workspace-icons-changed", workspace_id)
 
-
     def _apply_workspaces(self, reply: HyprlandReply) -> None:
         raw = _decode_json(reply)
         if not isinstance(raw, list):
@@ -399,7 +408,7 @@ class HyprlandManager(Service):
         for ws in raw:
             if not isinstance(ws, dict):
                 continue
-            ws_id = int(ws.get("id"))
+            ws_id = int(ws.get("id", 0))
 
             new[ws_id] = {
                 "id": ws_id,
@@ -433,6 +442,7 @@ class HyprlandManager(Service):
         self.emit("monitor-removed", mon_id)
         self._schedule_monitors_refresh()
         self._schedule_workspaces_refresh()
+
     def _apply_monitors(self, reply: HyprlandReply) -> None:
         raw = _decode_json(reply)
         if not isinstance(raw, list):
@@ -442,7 +452,7 @@ class HyprlandManager(Service):
         for mon in raw:
             if not isinstance(mon, dict):
                 continue
-            mid = int(mon.get("id"))
+            mid = int(mon.get("id", 0))
             special_ws = mon.get("specialWorkspace") or {}
             active_ws = mon.get("activeWorkspace") or {}
             new_mon: Monitor = {
@@ -512,12 +522,13 @@ class HyprlandManager(Service):
                 self._schedule_workspace_icons_refresh()
             return
 
-        mon = raw.get("monitor", None)
+        mon = raw.get("monitor", 0)
         mon_id = int(mon)
 
         ws = raw.get("workspace") if isinstance(raw.get("workspace"), dict) else {}
+        new_window: ActiveWindow | None
         if ws:
-            new_window: ActiveWindow = {
+            new_window = {
                 "address": raw.get("address", ""),
                 "mapped": bool(raw.get("mapped", False)),
                 "hidden": bool(raw.get("hidden", False)),
@@ -545,7 +556,7 @@ class HyprlandManager(Service):
                 "xdgDescription": str(raw.get("xdgDescription", "")),
             }
         else:
-            new_window: None = None
+            new_window = None
 
         prev = self._active_windows.get(mon_id)
         if prev != new_window:
@@ -571,7 +582,11 @@ class HyprlandManager(Service):
             addr = client.get("address")
             if not isinstance(addr, str) or not addr:
                 continue
-            ws = client.get("workspace") if isinstance(client.get("workspace"), dict) else {}
+            ws = (
+                client.get("workspace")
+                if isinstance(client.get("workspace"), dict)
+                else {}
+            ) or {}
             at = client.get("at") or [0, 0]
             size = client.get("size") or [0, 0]
             new_client: Client = {

@@ -29,21 +29,18 @@ from services.brightness import Brightness
 from services.hyprland import HyprlandManager
 from services.weather import WeatherService
 
-AUDIO_WIDGET = True
+audio_widget: bool = True
 
 
-if AUDIO_WIDGET:
-    try:
-        from fabric.audio.service import Audio
-    except Exception as e:
-        AUDIO_WIDGET = False
-
+try:
+    from fabric.audio.service import Audio
+except Exception:
+    audio_widget = False
+    Audio = None  # type: ignore[assignment]
 
 
 class StatusBar(Window):
-    def __init__(
-        self, monitor=1
-    ):
+    def __init__(self, monitor=1):
         """
         - begin
             - left_panel_widget
@@ -71,34 +68,37 @@ class StatusBar(Window):
             monitor=monitor,
         )
         monitor = sorted(list(hypr_manager.monitors.keys()))[monitor]
-        self.audio = Audio()
+        self.audio = Audio() if Audio is not None else None
         self.clock = ClockWidget()
 
-        self.weather_service = WeatherService(city="Paris", fetch_interval_minutes=10, use_uscs=False)
+        self.weather_service = WeatherService(
+            city="Paris", fetch_interval_minutes=10, use_uscs=False
+        )
         self.weather_widget = WeatherWidget(self.weather_service)
 
         # self.active_window = ActiveWindowWidget(HyprlandManager())
         self.perf_widget = PerfWidget()
 
-
         self.system_status = Box(
-            name="system-status",
-            spacing=4,
-            orientation="h",
-            children=[]
+            name="system-status", spacing=4, orientation="h", children=[]
         )
         self.hyprland = HyprlandManager()
         self.active_window = ActiveWindowWidget(self.hyprland, monitor)
-        self.workspaces = HyprlandWorkspacesTray(self.hyprland, two_rows=False, monitor_id=monitor)
+        self.workspaces = HyprlandWorkspacesTray(
+            self.hyprland, two_rows=False, monitor_id=monitor
+        )
         self.systray = SystemTray()
-        self.sound = Sound(self.audio)
+        self.sound = Sound(self.audio) if self.audio is not None else None
         # self.media_player = MediaPlayer(self.audio)
         self.brightness = BrightnessWidget(Brightness(self.hyprland), monitor)
 
         self.left_box = Box(
             name="bar-left-box",
-            children=[self.active_window, Box(children=[self.sound, self.brightness], spacing=4)],
-            spacing=10
+            children=[
+                self.active_window,
+                Box(children=[self.sound, self.brightness], spacing=4),
+            ],
+            spacing=10,
         )
         self.center_box = CenterBox(
             name="bar-inner-box",
@@ -112,8 +112,8 @@ class StatusBar(Window):
             start_children=self.left_box,
             center_children=self.center_box,
             end_children=self.systray,
-            h_align="fill", # / fill / baseline / start
-            h_expand=True # / False
+            h_align="fill",  # / fill / baseline / start
+            h_expand=True,  # / False
         )
 
         self.show_all()
@@ -122,12 +122,10 @@ class StatusBar(Window):
 if __name__ == "__main__":
     os.environ["XDG_DATA_DIRS"] = "/usr/local/share:/usr/share"
 
-
     def on_monitor_added(manager, monitor_id):
         print("monitor-id", monitor_id)
         new_bar = StatusBar(monitor=monitor_id)
         app.add_window(new_bar)
-
 
     hypr_manager = HyprlandManager()
     hypr_manager.connect("monitor-added", on_monitor_added)

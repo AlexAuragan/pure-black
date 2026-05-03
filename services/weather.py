@@ -9,6 +9,7 @@ from gi.repository import GLib
 
 from services.service import Service
 
+
 class WeatherForecastDay(TypedDict, total=False):
     date: str
     sunrise: str
@@ -17,6 +18,7 @@ class WeatherForecastDay(TypedDict, total=False):
     temp_max: int | float
     temp_min: int | float
     precip_total: int | float
+
 
 class WeatherServiceData(TypedDict, total=False):
     uv: int
@@ -40,8 +42,6 @@ class WeatherServiceData(TypedDict, total=False):
     forecast: list[WeatherForecastDay]
 
 
-
-
 def _pick_midday_code(day: dict[str, Any]) -> str:
     # wttr hourly "time" is strings like "0", "300", "600", ..."1200"...
     hourly = day.get("hourly", []) or []
@@ -53,7 +53,8 @@ def _pick_midday_code(day: dict[str, Any]) -> str:
         return str((hourly[0] or {}).get("weatherCode", "113"))
     return "113"
 
-def convert_to_sane_hour_format(time:str):
+
+def convert_to_sane_hour_format(time: str):
     if " AM" in time:
         return time.removesuffix(" AM")
     elif " PM" in time:
@@ -62,7 +63,8 @@ def convert_to_sane_hour_format(time:str):
         return f"{int(h) + 12}:{m}"
     return time
 
-class WeatherService(Service):
+
+class WeatherService(Service[Any, Any]):
     """
     Non-UI service.
     - Polls wttr.in periodically
@@ -172,10 +174,14 @@ class WeatherService(Service):
             if not raw or not raw.strip():
                 return None
             try:
-                out = subprocess.check_output(self._build_jq_cmd(), input=raw, timeout=10)
+                out = subprocess.check_output(
+                    self._build_jq_cmd(), input=raw, timeout=10
+                )
                 return json.loads(out.decode("utf-8"))
             except Exception:
-                out = subprocess.check_output(self._build_jq_fallback_cmd(), input=raw, timeout=10)
+                out = subprocess.check_output(
+                    self._build_jq_fallback_cmd(), input=raw, timeout=10
+                )
                 return json.loads(out.decode("utf-8"))
         except Exception:
             return None
@@ -193,7 +199,7 @@ class WeatherService(Service):
         forecast_raw = data.get("forecast", []) or []
         forecast: list[WeatherForecastDay] = []
         for day in forecast_raw[:3]:
-            astronomy_day = (day.get("astronomy", {}) or {})
+            astronomy_day = day.get("astronomy", {}) or {}
             wcode = _pick_midday_code(day)
 
             if self.use_uscs:
@@ -205,54 +211,60 @@ class WeatherService(Service):
                 temp_min = day.get("mintempC", 0)
                 precip_total = day.get("totalPrecipMM", 0)
 
-            forecast.append({
-                "date": str(day.get("date", "")),
-                "sunrise": convert_to_sane_hour_format(str(astronomy_day.get("sunrise", "0.0"))),
-                "sunset": convert_to_sane_hour_format(str(astronomy_day.get("sunset", "0.0"))),
-                "wCode": str(wcode),
-                "temp_max": temp_max,
-                "temp_min": temp_min,
-                "precip_total": precip_total,
-            })
+            forecast.append(
+                {
+                    "date": str(day.get("date", "")),
+                    "sunrise": convert_to_sane_hour_format(
+                        str(astronomy_day.get("sunrise", "0.0"))
+                    ),
+                    "sunset": convert_to_sane_hour_format(
+                        str(astronomy_day.get("sunset", "0.0"))
+                    ),
+                    "wCode": str(wcode),
+                    "temp_max": temp_max,
+                    "temp_min": temp_min,
+                    "precip_total": precip_total,
+                }
+            )
         sunrise = astronomy.get("sunrise", "0.0")
         sunset = astronomy.get("sunset", "0.0")
 
-
         out: WeatherServiceData = {
             "uv": current.get("uvIndex", 0),
-            "humidity": current.get('humidity', 0),
+            "humidity": current.get("humidity", 0),
             "sunrise": convert_to_sane_hour_format(sunrise),
             "sunset": convert_to_sane_hour_format(sunset),
             "windDir": current.get("winddir16Point", "N"),
             "wCode": current.get("weatherCode", "113"),
-            "city": self.city or (location.get("areaName", [{}])[0] or {}).get("value", "City"),
+            "city": self.city
+            or (location.get("areaName", [{}])[0] or {}).get("value", "City"),
             "wind": 0,
             "precip": 0,
             "temp": 0,
             "press": 0,
             "visib": 0,
-            "temp_feels_like": 0
+            "temp_feels_like": 0,
         }
 
         if self.use_uscs:
-            out["wind"] = current.get('windspeedMiles', 0)
-            out["precip"] = current.get('precipInches', 0)
-            out["visib"] = current.get('visibilityMiles', 0)
-            out["press"] = current.get('pressureInches', 0)
-            out["temp"] = current.get('temp_F', 0)
-            out["temp_feels_like"] = current.get('FeelsLikeF', 0)
+            out["wind"] = current.get("windspeedMiles", 0)
+            out["precip"] = current.get("precipInches", 0)
+            out["visib"] = current.get("visibilityMiles", 0)
+            out["press"] = current.get("pressureInches", 0)
+            out["temp"] = current.get("temp_F", 0)
+            out["temp_feels_like"] = current.get("FeelsLikeF", 0)
             out["temp_unit"] = "℉"
             out["wind_unit"] = "mph"
             out["precip_unit"] = "in"
             out["visib_unit"] = "m"
             out["press_unit"] = "psi"
         else:
-            out["wind"] = current.get('windspeedKmph', 0)
-            out["precip"] = current.get('precipMM', 0)
-            out["visib"] = current.get('visibility', 0)
-            out["press"] = current.get('pressure', 0)
-            out["temp"] = current.get('temp_C', 0)
-            out["temp_feels_like"] = current.get('FeelsLikeC', 0)
+            out["wind"] = current.get("windspeedKmph", 0)
+            out["precip"] = current.get("precipMM", 0)
+            out["visib"] = current.get("visibility", 0)
+            out["press"] = current.get("pressure", 0)
+            out["temp"] = current.get("temp_C", 0)
+            out["temp_feels_like"] = current.get("FeelsLikeC", 0)
             out["temp_unit"] = "℃"
             out["wind_unit"] = "km/h"
             out["precip_unit"] = "mm"
@@ -261,4 +273,3 @@ class WeatherService(Service):
 
         out["forecast"] = forecast
         return out
-

@@ -13,7 +13,9 @@ def position_under(widget, popup, gap=4):
     widget_center_x = wx + alloc.x + (alloc.width // 2)
 
     popup_w = popup.get_allocated_width()
-    if popup_w <= 1: # On first init, the first popup_w can be 0 or 1, we try something else to fetch the width of the
+    if (
+        popup_w <= 1
+    ):  # On first init, the first popup_w can be 0 or 1, we try something else to fetch the width of the
         # widget
         popup_w = popup.get_preferred_size()[1].width
 

@@ -11,14 +11,21 @@ from components.popup_widget import PopupWidget, PopupWindow
 
 from gi.repository import Gdk
 
-BASE_ICON_PATH = Path(__file__).parent.parent.parent / "styles" / "pure_black" / "icons" / "pc"
+BASE_ICON_PATH = (
+    Path(__file__).parent.parent.parent / "styles" / "pure_black" / "icons" / "pc"
+)
+
 
 class SoundScale(EventBox):
     def __init__(self, audio_service: Audio):
         self.audio_service = audio_service
         self.volume_bar = Scale(
             name="volume-bar",
-            max_value=100, min_value=0, value=55, orientation="vertical", size=(4, 120),
+            max_value=100,
+            min_value=0,
+            value=55,
+            orientation="vertical",
+            size=(4, 120),
             v_align="center",
             events="scroll",
         )
@@ -33,12 +40,10 @@ class SoundScale(EventBox):
         self.audio_service.connect("notify::speaker", self._on_speaker_set)
         self.volume_bar.connect("scroll-event", self.on_scroll)
 
-
     def _on_speaker_set(self, service, event):
         if service.speaker:
             service.speaker.connect("notify::volume", self._on_service_volume_changed)
             self._sync_bar(service.speaker.volume)
-
 
     def _on_service_volume_changed(self, speaker, event):
         self._sync_bar(speaker.volume)
@@ -53,7 +58,6 @@ class SoundScale(EventBox):
             return
         if self.audio_service.speaker:
             self.audio_service.speaker.volume = max(0, min(100, scale.value))
-
 
     def change_volume(self, delta: int):
         if self.audio_service.speaker is None:
@@ -80,6 +84,7 @@ class SoundScale(EventBox):
                 self.change_volume(-8)
         return
 
+
 class SoundIcon(Box):
     def __init__(self, audio_service: Audio, volume=0):
         self.audio_service = audio_service
@@ -90,11 +95,11 @@ class SoundIcon(Box):
             all_visible=True,
             orientation="vertical",
             spacing=4,
-            v_align="center"
+            v_align="center",
         )
 
     def on_volume_change(self, service: AudioStream, event):
-        self.volume = service.volume
+        self.volume = int(service.volume)
 
     @property
     def volume(self) -> int:
@@ -116,6 +121,7 @@ class SoundIcon(Box):
     def on_speaker_set(self):
         self.audio_service.speaker.connect("notify::volume", self.on_volume_change)
 
+
 class Sound(PopupWidget):
     def __init__(self, audio_service: Audio):
         self.audio_service = audio_service
@@ -128,14 +134,13 @@ class Sound(PopupWidget):
             popup_window=self.popup_window,
             all_visible=True,
             events="scroll",
-            interactive=True
+            interactive=True,
         )
         self.add_style_class("top-widget")
 
         self.audio_service.connect("notify::speaker", self.sound_icon.on_speaker_set)
         self.connect("scroll-event", self.on_scroll)
         self.connect("button-press-event", self.on_button_press)
-
 
     def change_volume(self, delta: int):
         if self.audio_service.speaker is None:

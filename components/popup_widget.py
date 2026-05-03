@@ -1,4 +1,4 @@
-from typing import Callable, Literal
+from typing import Any, Callable, Literal
 
 from fabric.widgets.eventbox import EventBox
 from fabric.widgets.wayland import WaylandWindow
@@ -10,26 +10,27 @@ from gi.repository import Gdk
 
 from utils.widget_utils import position_under
 
+
 class PopupWindow(WaylandWindow):
     def __init__(
-            self,
-            child_view: Widget,
-            on_before_show: Callable[[any], None] = None,
-            use_revealer: bool = True,
-            transition_type: Literal[
-                "none",
-                "crossfade",
-                "slide-right",
-                "slide-left",
-                "slide-up",
-                "slide-down",
-                # "swing-right",
-                # "swing-left",
-                # "swing-up",
-                # "swing-down",
-            ] = "slide-down",
-            transition_duration: int = 250,
-            **kwargs
+        self,
+        child_view: Widget,
+        on_before_show: Callable[[], None] | None = None,
+        use_revealer: bool = True,
+        transition_type: Literal[
+            "none",
+            "crossfade",
+            "slide-right",
+            "slide-left",
+            "slide-up",
+            "slide-down",
+            # "swing-right",
+            # "swing-left",
+            # "swing-up",
+            # "swing-down",
+        ] = "slide-down",
+        transition_duration: int = 250,
+        **kwargs,
     ):
         self.use_revealer = use_revealer
         self.transition_duration = transition_duration
@@ -39,7 +40,7 @@ class PopupWindow(WaylandWindow):
                 child=child_view,
                 transition_type=transition_type,
                 transition_duration=self.transition_duration,
-                child_revealed=False
+                child_revealed=False,
             )
             content = self.revealer
         else:
@@ -62,12 +63,9 @@ class PopupWindow(WaylandWindow):
         self.connect("enter-notify-event", self._on_enter)
         self.connect("leave-notify-event", self._on_leave)
 
-
-    @staticmethod
     def _on_enter(self, event):
         self.is_hovered = True
 
-    @staticmethod
     def _on_leave(self, event):
         if event.detail == Gdk.NotifyType.INFERIOR:
             return
@@ -82,16 +80,17 @@ class PopupWindow(WaylandWindow):
         self.set_visible(True)
         self.show_all()
         if self.use_revealer:
+            assert self.revealer is not None
             self.revealer.reveal()
 
     def close(self):
         if self.use_revealer:
+            assert self.revealer is not None
             self.revealer.unreveal()
             if self._hide_timer_id is not None:
                 GLib.source_remove(self._hide_timer_id)
             self._hide_timer_id = GLib.timeout_add(
-                self.transition_duration,
-                self._hide_window
+                self.transition_duration, self._hide_window
             )
         else:
             self._hide_window()
@@ -101,13 +100,14 @@ class PopupWindow(WaylandWindow):
         self._hide_timer_id = None
         return False
 
+
 class PopupWidget(EventBox):
     def __init__(
-            self,
-            main_widget: Widget,
-            popup_window: PopupWindow,
-            interactive: bool = False,
-            **kwargs
+        self,
+        main_widget: Widget,
+        popup_window: PopupWindow,
+        interactive: bool = False,
+        **kwargs,
     ):
         super().__init__(child=main_widget, **kwargs)
         self.popup = popup_window
@@ -120,7 +120,6 @@ class PopupWidget(EventBox):
         self.popup.show_all()
         self.popup.set_visible(False)
 
-    @staticmethod
     def _on_hover_enter(self, event):
         if self._close_timer:
             GLib.source_remove(self._close_timer)
@@ -133,7 +132,6 @@ class PopupWidget(EventBox):
         self.popup.on_before_show()
         self.popup.open_under(self)
 
-    @staticmethod
     def _on_hover_exit(self, event):
         # Prevent flickering when moving mouse from widget into the popup itself
         if event.detail == Gdk.NotifyType.INFERIOR:
@@ -147,4 +145,4 @@ class PopupWidget(EventBox):
         if not self.popup.is_hovered:
             self.popup.close()
         self._close_timer = None
-        return False # Do not repeat the timer
+        return False  # Do not repeat the timer

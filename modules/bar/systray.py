@@ -7,7 +7,9 @@ from services.system_tray import (
     SystemTrayItem as SystemTrayItemService,
 )
 from modules.bar.clock import ClockWidget
+
 watcher = None
+
 
 def get_tray_watcher() -> SystemTrayService:
     global watcher
@@ -38,10 +40,10 @@ class SystemTrayItem(Button):
 
         tooltip = self._item.tooltip
         self.set_tooltip_markup(
-            tooltip.description or
-            tooltip.title or
-            (self._item.title.title() if self._item.title else None) or
-            "Unknown"
+            tooltip.description
+            or tooltip.title
+            or (self._item.title.title() if self._item.title else None)
+            or "Unknown"
         )
         return
 
@@ -95,9 +97,6 @@ class SystemTray(Box):
         self.systray = SysTray(icon_size=16, spacing=4)
         self.clock = ClockWidget()
         super().__init__(
-            spacing=6,
-            name="systray",
-            children=[self.systray, self.clock],
-            **kwargs
+            spacing=6, name="systray", children=[self.systray, self.clock], **kwargs
         )
         self.add_style_class("top-widget")

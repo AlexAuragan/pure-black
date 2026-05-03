@@ -1,5 +1,3 @@
 from .svg import Svg
 
-__all__ = [
-    "Svg"
-]
+__all__ = ["Svg"]

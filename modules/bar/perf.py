@@ -2,6 +2,7 @@ import os
 import subprocess
 import threading
 import time
+from typing import Any
 from pathlib import Path
 
 import psutil
@@ -40,7 +41,13 @@ class PerfPopupView(Box):
 
         # CPU Column
         self.cpu_col = Box(orientation="v", spacing=4, h_expand=True)
-        self.cpu_col.add(Label(label="CPU", x_align=0, style="font-weight: bold; color: var(--accent1);"))
+        self.cpu_col.add(
+            Label(
+                label="CPU",
+                x_align=0,
+                style="font-weight: bold; color: var(--accent1);",
+            )
+        )
         self.cpu_label = Label(label="0%", x_align=0)
         self.cpu_bar = Scale(name="popup-cpu-bar", orientation="h")
         self.cpu_bar.add_style_class("perf-bar")
@@ -49,7 +56,13 @@ class PerfPopupView(Box):
 
         # RAM Column
         self.ram_col = Box(orientation="v", spacing=4, h_expand=True)
-        self.ram_col.add(Label(label="MEM", x_align=0, style="font-weight: bold; color: var(--accent2);"))
+        self.ram_col.add(
+            Label(
+                label="MEM",
+                x_align=0,
+                style="font-weight: bold; color: var(--accent2);",
+            )
+        )
         self.ram_label = Label(label="0/0 GB", x_align=0)
         self.ram_bar = Scale(name="popup-ram-bar", orientation="h")
         self.ram_bar.add_style_class("perf-bar")
@@ -68,15 +81,29 @@ class PerfPopupView(Box):
         # Left Column: Top CPU
         self.cpu_proc_col = Box(orientation="v", spacing=4, h_expand=True)
         self.cpu_proc_col.add(
-            Label(label="TOP BY CPU", x_align=0, style="font-weight: bold; font-size: 10px; color: var(--accent3);"))
-        self.cpu_proc_list = Label(label="...", x_align=0, style="font-family: monospace; font-size: 11px;")
+            Label(
+                label="TOP BY CPU",
+                x_align=0,
+                style="font-weight: bold; font-size: 10px; color: var(--accent3);",
+            )
+        )
+        self.cpu_proc_list = Label(
+            label="...", x_align=0, style="font-family: monospace; font-size: 11px;"
+        )
         self.cpu_proc_col.add(self.cpu_proc_list)
 
         # Right Column: Top RAM
         self.mem_proc_col = Box(orientation="v", spacing=4, h_expand=True)
         self.mem_proc_col.add(
-            Label(label="TOP BY MEM", x_align=0, style="font-weight: bold; font-size: 10px; color: var(--accent4);"))
-        self.mem_proc_list = Label(label="...", x_align=0, style="font-family: monospace; font-size: 11px;")
+            Label(
+                label="TOP BY MEM",
+                x_align=0,
+                style="font-weight: bold; font-size: 10px; color: var(--accent4);",
+            )
+        )
+        self.mem_proc_list = Label(
+            label="...", x_align=0, style="font-family: monospace; font-size: 11px;"
+        )
         self.mem_proc_col.add(self.mem_proc_list)
 
         self.proc_container.add(self.cpu_proc_col)
@@ -91,7 +118,7 @@ class PerfPopupView(Box):
         self.is_init = True
         cpu_p = data["cpu"]
         mem = data["ram"]
-        total_ram_gb = mem.total / (1024 ** 3)
+        total_ram_gb = mem.total / (1024**3)
 
         # Update resource bars
         self.cpu_label.set_label(f"{cpu_p}%")
@@ -103,24 +130,31 @@ class PerfPopupView(Box):
         procs = data["procs"]
 
         # CPU Top 3
-        top_cpu = sorted(procs, key=lambda x: x['cpu_percent'], reverse=True)[:3]
-        self.cpu_proc_list.set_label("".join([
-            f"{(p['name'][:10] + '..') if len(p['name']) > 10 else p['name'].ljust(12)} {p['cpu_percent']:>4.0f}%\n"
-            for p in top_cpu
-        ]))
+        top_cpu = sorted(procs, key=lambda x: x["cpu_percent"], reverse=True)[:3]
+        self.cpu_proc_list.set_label(
+            "".join(
+                [
+                    f"{(p['name'][:10] + '..') if len(p['name']) > 10 else p['name'].ljust(12)} {p['cpu_percent']:>4.0f}%\n"
+                    for p in top_cpu
+                ]
+            )
+        )
 
         # RAM Top 3
-        top_mem = sorted(procs, key=lambda x: x['memory_percent'], reverse=True)[:3]
-        self.mem_proc_list.set_label("".join([
-            f"{(p['name'][:8] + '..') if len(p['name']) > 8 else p['name'].ljust(10)} "
-            f"{p['memory_info'].rss / (1024 ** 3):>4.1f}G {p['memory_percent']:>3.0f}%\n"
-            for p in top_mem
-        ]))
-
+        top_mem = sorted(procs, key=lambda x: x["memory_percent"], reverse=True)[:3]
+        self.mem_proc_list.set_label(
+            "".join(
+                [
+                    f"{(p['name'][:8] + '..') if len(p['name']) > 8 else p['name'].ljust(10)} "
+                    f"{p['memory_info'].rss / (1024 ** 3):>4.1f}G {p['memory_percent']:>3.0f}%\n"
+                    for p in top_mem
+                ]
+            )
+        )
 
 
 class PerfPopupWindow(WaylandWindow):
-    def __init__(self, perf_data: Fabricator, **kwargs):
+    def __init__(self, perf_data: Fabricator[Any], **kwargs):
         self.view = PerfPopupView()
         super().__init__(
             name="perf-popup-window",
@@ -144,11 +178,11 @@ class PerfPopupWindow(WaylandWindow):
         position_under(widget, self)
         self.set_visible(True)
 
-
     def close(self):
         self.set_visible(False)
         if self.compute_repeater:
             self.compute_repeater = None
+
 
 class PerfWidget(PopupWidget):
     def __init__(self):
@@ -159,7 +193,6 @@ class PerfWidget(PopupWidget):
         ram_icon.set_name("perf_icon")
         battery_icon = Svg(base + "battery.svg", icon_size=12)
         battery_icon.set_name("perf_icon")
-
 
         self.cpu_widget = CircularProgressBar(
             name="cpu-progress-bar",
@@ -172,7 +205,7 @@ class PerfWidget(PopupWidget):
             pie=True,
             child=ram_icon,
             size=24,
-         )
+        )
 
         self.battery_widget = CircularProgressBar(
             name="battery-progress-bar",
@@ -190,11 +223,7 @@ class PerfWidget(PopupWidget):
             children.append(self.battery_widget)
 
         self._inner = Box(children=children, spacing=4, name="perf")
-        super().__init__(
-            name="perf",
-            main_widget=self._inner,
-            popup_window=self.popup
-        )
+        super().__init__(name="perf", main_widget=self._inner, popup_window=self.popup)
         self.add_style_class("top-widget")
         self.connect("button-press-event", self.on_button_press)
         threading.Thread(target=self._poll_loop, daemon=True).start()
@@ -205,12 +234,18 @@ class PerfWidget(PopupWidget):
                 "cpu": psutil.cpu_percent(),
                 "ram": psutil.virtual_memory(),
                 "battery": psutil.sensors_battery(),
-                "procs": [p.info for p in psutil.process_iter(['name', 'cpu_percent', 'memory_percent', 'memory_info'], ad_value=None)],
+                "procs": [
+                    p.info
+                    for p in psutil.process_iter(
+                        ["name", "cpu_percent", "memory_percent", "memory_info"],
+                        ad_value=None,
+                    )
+                ],
             }
             GLib.idle_add(self.on_perf_changed, data)
             time.sleep(1)
 
-    def on_perf_changed(self, data: dict):
+    def on_perf_changed(self, data: dict[str, Any]):
         self.cpu_widget.set_value(data["cpu"] / 100)
         self.ram_widget.set_value(data["ram"].percent / 100)
         if (battery := data.get("battery")) is not None:
@@ -226,4 +261,3 @@ class PerfWidget(PopupWidget):
     @staticmethod
     def on_left_click():
         subprocess.Popen(["kitty", "--start-as=fullscreen", "btop"])
-

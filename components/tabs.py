@@ -125,12 +125,16 @@ class Tabs(EventBox):
         super().__init__(
             name="tabs-root",
             style_classes=["tabs-root"],
-            child=Box(children=[self._tab_bar, self._content_bg], orientation="vertical", spacing=0),
+            child=Box(
+                children=[self._tab_bar, self._content_bg],
+                orientation="vertical",
+                spacing=0,
+            ),
             all_visible=True,
             h_expand=True,
             v_expand=True,
             can_focus=True,
-            events="key-press"
+            events="key-press",
         )
 
         self._build(default_key)
@@ -150,6 +154,7 @@ class Tabs(EventBox):
             def make_handler(tab_key: str):
                 def handler(_btn):
                     self.set_current(tab_key)
+
                 return handler
 
             tab = FolderTab(

@@ -9,6 +9,7 @@ def _pw_dump_nodes() -> list[dict[str, Any]]:
     data = json.loads(p.stdout)
     return data if isinstance(data, list) else []
 
+
 def is_pid_playing(pid: int) -> bool | None:
     if pid <= 0:
         return

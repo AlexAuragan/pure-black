@@ -14,8 +14,9 @@ from gi.repository import Gdk
 
 from services.brightness import BrightnessStream, Brightness
 
-BASE_ICON_PATH = Path(__file__).parent.parent.parent / "styles" / "pure_black" / "icons" / "pc"
-
+BASE_ICON_PATH = (
+    Path(__file__).parent.parent.parent / "styles" / "pure_black" / "icons" / "pc"
+)
 
 
 class BrightnessScale(EventBox):
@@ -28,8 +29,11 @@ class BrightnessScale(EventBox):
 
         self.brightness_bar = Scale(
             name="brightness-bar",
-            max_value=100, min_value=0, value=50,
-            orientation="vertical", size=(4, 120),
+            max_value=100,
+            min_value=0,
+            value=50,
+            orientation="vertical",
+            size=(4, 120),
             v_align="center",
             events="scroll",
         )
@@ -37,7 +41,6 @@ class BrightnessScale(EventBox):
         super().__init__(name="brightness-scale-window", child=self.brightness_bar)
         self.brightness_bar.connect("value-changed", self._on_bar_changed)
         self.brightness_bar.connect("scroll-event", self.on_scroll)
-
 
     def update_stream(self, stream: BrightnessStream | None):
         # 1. Disconnect old stream
@@ -50,7 +53,7 @@ class BrightnessScale(EventBox):
         if stream:
             self._handler_id = stream.connect(
                 "notify::screen-brightness",
-                lambda s, e: self._sync_bar(s.screen_brightness)
+                lambda s, e: self._sync_bar(s.screen_brightness),
             )
             self._sync_bar(stream.screen_brightness)
 
@@ -66,7 +69,6 @@ class BrightnessScale(EventBox):
             return
         self._current_stream.screen_brightness = float(scale.get_value())
 
-
     def change_brightness(self, delta: int):
         if not self._current_stream:
             return
@@ -76,7 +78,8 @@ class BrightnessScale(EventBox):
     def on_scroll(self, widget, event):
         if event.direction == Gdk.ScrollDirection.SMOOTH:
             success, _, delta_y = event.get_scroll_deltas()
-            if success: self.change_brightness(-8 if delta_y > 0 else 8)
+            if success:
+                self.change_brightness(-8 if delta_y > 0 else 8)
         elif event.direction == Gdk.ScrollDirection.UP:
             self.change_brightness(8)
         elif event.direction == Gdk.ScrollDirection.DOWN:
@@ -115,6 +118,7 @@ class BrightnessIcon(Box):
 
         self.icon.set_from_file(str(BASE_ICON_PATH / icon_name))
 
+
 class BrightnessWidget(PopupWidget):
     def __init__(self, brightness_service: Brightness, screen_id: int = 0):
         self.brightness_service = brightness_service
@@ -132,7 +136,7 @@ class BrightnessWidget(PopupWidget):
             events="scroll",
             interactive=True,
         )
-        
+
         self.add_style_class("top-widget")
         self.connect("scroll-event", self.on_scroll)
         self.connect("button-press-event", self.on_button_press)
@@ -147,7 +151,6 @@ class BrightnessWidget(PopupWidget):
         # Update the UI components with the new stream (or None)
         self.brightness_icon.update_stream(match)
         self.popup_view.update_stream(match)
-
 
     def on_scroll(self, _, event):
         self.popup_view.on_scroll(_, event)

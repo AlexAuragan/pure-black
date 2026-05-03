@@ -15,22 +15,26 @@ class Svg(FabricSvg):
     """
 
     def __init__(
-            self,
-            svg_file: str | Path | None = None,
-            size: Iterable[int] | int | None = 12,
-            svg_string: str | None = None,
-            name: str | None = None,
-            visible: bool = True,
-            all_visible: bool = False,
-            style: str | None = None,
-            style_classes: Iterable[str] | str | None = None,
-            tooltip_text: str | None = None,
-            tooltip_markup: str | None = None,
-            h_align: Literal["fill", "start", "end", "center", "baseline"] | Gtk.Align | None = None,
-            v_align: Literal["fill", "start", "end", "center", "baseline"] | Gtk.Align | None = None,
-            h_expand: bool = False,
-            v_expand: bool = False,
-            **kwargs,
+        self,
+        svg_file: str | Path | None = None,
+        size: Iterable[int] | int | None = 12,
+        svg_string: str | None = None,
+        name: str | None = None,
+        visible: bool = True,
+        all_visible: bool = False,
+        style: str | None = None,
+        style_classes: Iterable[str] | str | None = None,
+        tooltip_text: str | None = None,
+        tooltip_markup: str | None = None,
+        h_align: (
+            Literal["fill", "start", "end", "center", "baseline"] | Gtk.Align | None
+        ) = None,
+        v_align: (
+            Literal["fill", "start", "end", "center", "baseline"] | Gtk.Align | None
+        ) = None,
+        h_expand: bool = False,
+        v_expand: bool = False,
+        **kwargs,
     ):
         if isinstance(svg_file, Path):
             svg_file = str(svg_file)
@@ -50,7 +54,7 @@ class Svg(FabricSvg):
             h_expand=h_expand,
             v_expand=v_expand,
             size=size,
-            **kwargs
+            **kwargs,
         )
 
     def do_draw(self, cr: cairo.Context):
