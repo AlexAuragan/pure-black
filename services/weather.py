@@ -64,7 +64,7 @@ def convert_to_sane_hour_format(time: str):
     return time
 
 
-class WeatherService(Service[Any, Any]):
+class WeatherService(Service[Any]):
     """
     Non-UI service.
     - Polls wttr.in periodically

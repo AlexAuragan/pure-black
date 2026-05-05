@@ -63,10 +63,10 @@ class PopupWindow(WaylandWindow):
         self.connect("enter-notify-event", self._on_enter)
         self.connect("leave-notify-event", self._on_leave)
 
-    def _on_enter(self, event):
+    def _on_enter(self, widget, event):
         self.is_hovered = True
 
-    def _on_leave(self, event):
+    def _on_leave(self, widget, event):
         if event.detail == Gdk.NotifyType.INFERIOR:
             return
         self.is_hovered = False
@@ -120,7 +120,7 @@ class PopupWidget(EventBox):
         self.popup.show_all()
         self.popup.set_visible(False)
 
-    def _on_hover_enter(self, event):
+    def _on_hover_enter(self, widget, event):
         if self._close_timer:
             GLib.source_remove(self._close_timer)
             self._close_timer = None
@@ -132,7 +132,7 @@ class PopupWidget(EventBox):
         self.popup.on_before_show()
         self.popup.open_under(self)
 
-    def _on_hover_exit(self, event):
+    def _on_hover_exit(self, widget, event):
         # Prevent flickering when moving mouse from widget into the popup itself
         if event.detail == Gdk.NotifyType.INFERIOR:
             return

@@ -226,14 +226,17 @@ class HyprlandManager(Service[Any, Any]):
         self._schedule_clients_refresh()
 
     def _connect_events(self) -> None:
-        # 1. Topology changes (workspaces/Monitors)
-        # we are handling them specifically below to get the IDs.
+        # 1. Topology changes (workspaces/monitors)
         for name in (
             "workspace",
             "createworkspace",
             "destroyworkspace",
             "focusedmon",
         ):
+            self.hypr.connect(f"event::{name}", self._on_topology_event)
+
+        # 2. Monitor plug/unplug
+        for name in ("monitoradded", "monitorremoved", "monitoraddedv2"):
             self.hypr.connect(f"event::{name}", self._on_topology_event)
 
         # 3. Active window + presentation state
@@ -426,22 +429,6 @@ class HyprlandManager(Service[Any, Any]):
             self._workspaces = new
             self.notify("workspaces")
             self._schedule_workspace_icons_refresh()
-
-    def _on_monitor_added_event(self, _hypr, data: str, *_args) -> None:
-        self.emit("monitor-added", -1)
-        self._schedule_monitors_refresh()
-        self._schedule_workspaces_refresh()
-
-    def _on_monitor_removed_event(self, _hypr, data: str, *_args) -> None:
-        mon_id = -1
-        for mid, mon in self._monitors.items():
-            if mon["name"] == data:
-                mon_id = mid
-                break
-
-        self.emit("monitor-removed", mon_id)
-        self._schedule_monitors_refresh()
-        self._schedule_workspaces_refresh()
 
     def _apply_monitors(self, reply: HyprlandReply) -> None:
         raw = _decode_json(reply)
