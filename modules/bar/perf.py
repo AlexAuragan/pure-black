@@ -230,6 +230,7 @@ class PerfWidget(PopupWidget):
 
     def _poll_loop(self):
         while True:
+<<<<<<< Updated upstream
             data = {
                 "cpu": psutil.cpu_percent(),
                 "ram": psutil.virtual_memory(),
@@ -243,6 +244,24 @@ class PerfWidget(PopupWidget):
                 ],
             }
             GLib.idle_add(self.on_perf_changed, data)
+=======
+            try:
+                procs = []
+                for p in psutil.process_iter(['name', 'cpu_percent', 'memory_percent', 'memory_info'], ad_value=None):
+                    try:
+                        procs.append(p.info)
+                    except (psutil.NoSuchProcess, psutil.AccessDenied, OSError):
+                        pass
+                data = {
+                    "cpu": psutil.cpu_percent(),
+                    "ram": psutil.virtual_memory(),
+                    "battery": psutil.sensors_battery(),
+                    "procs": procs,
+                }
+                GLib.idle_add(self.on_perf_changed, data)
+            except Exception:
+                pass
+>>>>>>> Stashed changes
             time.sleep(1)
 
     def on_perf_changed(self, data: dict[str, Any]):

@@ -68,7 +68,14 @@ def _icon_dirs() -> list[Path]:
     return uniq
 
 
+_desktop_entries_cache: list[DesktopEntry] | None = None
+
+
 def _read_desktop_entries() -> list[DesktopEntry]:
+    global _desktop_entries_cache
+    if _desktop_entries_cache is not None:
+        return _desktop_entries_cache
+
     entries: list[DesktopEntry] = []
     for d in _desktop_entry_dirs():
         if not d.exists():
@@ -100,6 +107,7 @@ def _read_desktop_entries() -> list[DesktopEntry]:
                     filename=f.name,
                 )
             )
+    _desktop_entries_cache = entries
     return entries
 
 

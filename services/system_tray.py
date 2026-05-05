@@ -117,14 +117,14 @@ class SystemTrayItem(Service):
         )
         self._icon_theme: Gtk.IconTheme | None = None
 
+        self._remove_timer: int | None = None
+
         bulk_connect(
             self._proxy,
             {
                 "g-signal": self.on_dbus_signal,
                 "g-properties-changed": lambda *_: self.changed(),
-                "notify::g-name-owner": lambda *_: (
-                    self.removed() if not self._proxy.get_name_owner() else None
-                ),
+                "notify::g-name-owner": self._on_name_owner_changed,
             },
         )
 
@@ -146,6 +146,23 @@ class SystemTrayItem(Service):
 
         self.notify(signal_to_prop)
         return self.changed()
+
+    def _on_name_owner_changed(self, *_):
+        if self._proxy.get_name_owner():
+            # Owner came back — cancel any pending removal
+            if self._remove_timer is not None:
+                GLib.source_remove(self._remove_timer)
+                self._remove_timer = None
+            return
+        # Owner gone — wait 1 s before removing in case it's a transient restart
+        if self._remove_timer is None:
+            self._remove_timer = GLib.timeout_add(1000, self._do_remove)
+
+    def _do_remove(self):
+        self._remove_timer = None
+        if not self._proxy.get_name_owner():
+            self.removed()
+        return False
 
     def get_preferred_icon_pixbuf(
         self,
@@ -627,7 +644,36 @@ class SystemTray(Service):
                     interface,
                     self.do_handle_bus_call,  # type: ignore
                 )
+        # Tell already-running apps (e.g. Slack/Electron) that a host is ready.
+        # Apps that missed the watcher bus-name appearing watch for this signal.
+        self.do_emit_bus_signal("StatusNotifierHostRegistered", None)
+        # Re-announce the host whenever any new D-Bus name appears so apps
+        # that start after us (or self-restart) get a fresh registration prompt.
+        conn.signal_subscribe(
+            "org.freedesktop.DBus",
+            "org.freedesktop.DBus",
+            "NameOwnerChanged",
+            "/org/freedesktop/DBus",
+            None,
+            Gio.DBusSignalFlags.NONE,
+            self._on_dbus_name_owner_changed,
+            None,
+        )
         return
+
+    def _on_dbus_name_owner_changed(
+        self,
+        conn: Gio.DBusConnection,
+        sender: str,
+        path: str,
+        iface: str,
+        signal: str,
+        params: GLib.Variant,
+        user_data: object,
+    ) -> None:
+        _name, old_owner, new_owner = params.unpack()
+        if new_owner and not old_owner:
+            self.do_emit_bus_signal("StatusNotifierHostRegistered", None)
 
     def do_handle_bus_call(
         self,
@@ -672,6 +718,9 @@ class SystemTray(Service):
                 invocation.return_value(GLib.Variant("(a{sv})", (all_properties,)))
             case "RegisterStatusNotifierItem":
                 self.do_create_item(sender, params[0] if len(params) >= 1 else "")
+                invocation.return_value(None)
+            case "RegisterStatusNotifierHost":
+                self.do_emit_bus_signal("StatusNotifierHostRegistered", None)
                 invocation.return_value(None)
 
         return conn.flush()
