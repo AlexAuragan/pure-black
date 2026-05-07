@@ -52,8 +52,8 @@ class PopupWindow(WaylandWindow):
             type="popup",
             anchor="top left",
             child=content,
-            visible=False,
-            all_visible=False,
+            visible=self.use_revealer,
+            all_visible=self.use_revealer,
             **kwargs,
         )
         self.add_style_class("popup-window")
@@ -77,11 +77,12 @@ class PopupWindow(WaylandWindow):
             GLib.source_remove(self._hide_timer_id)
             self._hide_timer_id = None
         position_under(parent_widget, self)
-        self.set_visible(True)
-        self.show_all()
         if self.use_revealer:
             assert self.revealer is not None
             self.revealer.reveal()
+        else:
+            self.set_visible(True)
+            self.show_all()
 
     def close(self):
         if self.use_revealer:
@@ -96,7 +97,8 @@ class PopupWindow(WaylandWindow):
             self._hide_window()
 
     def _hide_window(self):
-        self.set_visible(False)
+        if not self.use_revealer:
+            self.set_visible(False)
         self._hide_timer_id = None
         return False
 
@@ -117,8 +119,9 @@ class PopupWidget(EventBox):
         # Connect Hover Events
         self.connect("enter-notify-event", self._on_hover_enter)
         self.connect("leave-notify-event", self._on_hover_exit)
-        self.popup.show_all()
-        self.popup.set_visible(False)
+        if not self.popup.use_revealer:
+            self.popup.show_all()
+            self.popup.set_visible(False)
 
     def _on_hover_enter(self, widget, event):
         if self._close_timer:
