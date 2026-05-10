@@ -4,10 +4,9 @@ version = "0.1.0"
 description = "Add your description here"
 requires-python = "==3.12.*"
 dependencies = [
-  "fabric @ git+https://github.com/Fabric-Development/fabric.git",
+  "fabric @ git+https://github.com/AlexAuragan/fabric.git",
   "psutil>=7.1.0",
   "pygobject-stubs>=2.16.0",
-  "ruff>=0.14.10",
 ]
 
 [dependency-groups]

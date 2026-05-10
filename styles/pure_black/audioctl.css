@@ -49,7 +49,7 @@
   border-right: 1px solid var(--window-bg);
 
   /* IMPORTANT: don't draw a bottom border; let it merge with frame */
-  border-bottom: 0;
+  border-bottom: 0px;
 }
 
 /* Left corner: draw the OUTER border (top + left). Inner edge to core is window-bg */
@@ -61,7 +61,7 @@
   border-right: 1px solid var(--window-bg);
 
   /* no bottom border to avoid the line above the frame */
-  border-bottom: 0;
+  border-bottom: 0px;
 }
 
 /* Right corner: draw OUTER border (top + right). Inner edge to core is window-bg */
@@ -73,7 +73,7 @@
   border-left: 1px solid var(--window-bg);
 
   /* no bottom border to avoid the line above the frame */
-  border-bottom: 0;
+  border-bottom: 0px;
 }
 
 

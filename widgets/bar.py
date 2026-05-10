@@ -19,7 +19,6 @@ from fabric.widgets.box import Box
 from modules.bar.active_window import ActiveWindowWidget
 from modules.bar.brightness import BrightnessWidget
 from modules.bar.clock import ClockWidget
-from modules.bar.media_player import MediaPlayer
 from modules.bar.sound import Sound
 from modules.bar.perf import PerfWidget
 from modules.bar.systray import SystemTray

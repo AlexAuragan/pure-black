@@ -92,8 +92,8 @@
 #volume-bar trough {
     min-width: 3px;
     border-radius: 100%;
-    margin-right: 0;
-    margin-left: 0;
+    margin-right: 0px;
+    margin-left: 0px;
     border: none;
     padding-bottom: 12px;
 }
@@ -118,8 +118,8 @@
 #brightness-bar trough {
     min-width: 3px;
     border-radius: 100%;
-    margin-right: 0;
-    margin-left: 0;
+    margin-right: 0px;
+    margin-left: 0px;
     border: none;
     padding-bottom: 12px;
 }

@@ -101,5 +101,5 @@
 
 .popup-window {
     background-color: var(--window-bg);
-    border-radius: 10;
+    border-radius: 10px;
 }
