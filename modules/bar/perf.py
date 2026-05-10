@@ -226,23 +226,12 @@ class PerfWidget(PopupWidget):
         super().__init__(name="perf", main_widget=self._inner, popup_window=self.popup)
         self.add_style_class("top-widget")
         self.connect("button-press-event", self.on_button_press)
+        self._stop = threading.Event()
+        self.connect("destroy", lambda *_: self._stop.set())
         threading.Thread(target=self._poll_loop, daemon=True).start()
 
     def _poll_loop(self):
-        while True:
-            data = {
-                "cpu": psutil.cpu_percent(),
-                "ram": psutil.virtual_memory(),
-                "battery": psutil.sensors_battery(),
-                "procs": [
-                    p.info
-                    for p in psutil.process_iter(
-                        ["name", "cpu_percent", "memory_percent", "memory_info"],
-                        ad_value=None,
-                    )
-                ],
-            }
-            GLib.idle_add(self.on_perf_changed, data)
+        while not self._stop.is_set():
             try:
                 procs = []
                 for p in psutil.process_iter(['name', 'cpu_percent', 'memory_percent', 'memory_info'], ad_value=None):
@@ -256,10 +245,11 @@ class PerfWidget(PopupWidget):
                     "battery": psutil.sensors_battery(),
                     "procs": procs,
                 }
-                GLib.idle_add(self.on_perf_changed, data)
+                if not self._stop.is_set():
+                    GLib.idle_add(self.on_perf_changed, data)
             except Exception:
                 pass
-            time.sleep(1)
+            self._stop.wait(1)
 
     def on_perf_changed(self, data: dict[str, Any]):
         self.cpu_widget.set_value(data["cpu"] / 100)

@@ -8,7 +8,7 @@ if PROJECT_DIR not in sys.path:
     sys.path.insert(0, PROJECT_DIR)
 
 from fabric import Application
-from gi.repository import Gdk
+from gi.repository import Gdk, GLib
 
 from fabric.widgets.wayland import WaylandWindow as Window
 
@@ -151,26 +151,42 @@ if __name__ == "__main__":
             brightness_service=shared_brightness,
         )
 
-    def on_monitor_added(manager, monitor_id):
-        name = hypr_manager.monitors.get(monitor_id, {}).get("name", "?")
-        print(f"[bar] monitor-added id={monitor_id} name={name}")
-        new_bar = make_bar(monitor_id)
-        bars[monitor_id] = new_bar
-        app.add_window(new_bar)
+    _rebuild_pending = [None]  # holds the GLib source id for the debounce timer
 
-    def on_monitor_removed(manager, monitor_id):
-        print(f"[bar] monitor-removed id={monitor_id}")
-        bar = bars.pop(monitor_id, None)
-        if bar is not None:
-            app.remove_window(bar)
+    def rebuild_bars(*_):
+        if _rebuild_pending[0] is not None:
+            GLib.source_remove(_rebuild_pending[0])
+        _rebuild_pending[0] = GLib.timeout_add(200, _do_rebuild)
+
+    def _do_rebuild():
+        _rebuild_pending[0] = None
+        for bar in list(bars.values()):
+            bar.close()
+        bars.clear()
+        monitor_ids = list(hypr_manager.monitors.keys())
+
+        def create_next(idx):
+            if idx >= len(monitor_ids):
+                return False
+            mid = monitor_ids[idx]
+            name = hypr_manager.monitors[mid].get("name", "?")
+            print(f"[bar] rebuilding bar for monitor id={mid} name={name}")
+            new_bar = make_bar(mid)
+            bars[mid] = new_bar
+            app.add_window(new_bar)
+            GLib.idle_add(create_next, idx + 1)
+            return False
+
+        GLib.idle_add(create_next, 0)
+        return False
 
     hypr_manager = HyprlandManager()
     shared_audio = Audio() if Audio is not None else None
     shared_weather = WeatherService(city="Paris", fetch_interval_minutes=10, use_uscs=False)
     shared_brightness = Brightness(hypr_manager)
 
-    hypr_manager.connect("monitor-added", on_monitor_added)
-    hypr_manager.connect("monitor-removed", on_monitor_removed)
+    hypr_manager.connect("monitor-added", rebuild_bars)
+    hypr_manager.connect("monitor-removed", rebuild_bars)
 
     bars = {mid: make_bar(mid) for mid in hypr_manager.monitors}
     app = Application("bars", *bars.values())
