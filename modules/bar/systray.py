@@ -26,10 +26,15 @@ class SystemTrayItem(Button):
         self._image = Image()
         self.set_image(self._image)
 
-        self._item.changed.connect(self.do_update_properties)
+        self._changed_id = self._item.changed.connect(self.do_update_properties)
         self.connect("button-press-event", self.on_clicked)
+        self.connect("destroy", self._on_destroy)
 
         self.do_update_properties()
+
+    def _on_destroy(self, *_):
+        self._item.disconnect(self._changed_id)
+        self._changed_id = None
 
     def do_update_properties(self, *_):
         pixbuf = self._item.get_preferred_icon_pixbuf(self._icon_size)
@@ -70,6 +75,9 @@ class SysTray(Box):
         self._watcher = get_tray_watcher()
         self._watcher.connect("item-added", self.on_item_added)
         self._watcher.connect("item-removed", self.on_item_removed)
+
+        for item_id in list(self._watcher.items):
+            self.on_item_added(None, item_id)
 
     def on_item_added(self, _, item_identifier: str):
         item = self._watcher.items.get(item_identifier)

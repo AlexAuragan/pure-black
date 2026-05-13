@@ -624,6 +624,6 @@ class HyprlandManager(Service[Any, Any]):
 
     def focus_workspace_current_monitor(self, workspace_id: int) -> None:
         self.hypr.send_command_async(
-            f"/dispatch focusworkspaceoncurrentmonitor {workspace_id}",
+        f'/dispatch hl.dsp.focus({{ workspace = "{workspace_id}" }})',
             lambda *_: None,
         )

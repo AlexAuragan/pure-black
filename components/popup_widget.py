@@ -1,12 +1,10 @@
 from typing import Any, Callable, Literal
 
 from fabric.widgets.eventbox import EventBox
-from fabric.widgets.wayland import WaylandWindow
 from fabric.widgets.revealer import Revealer
+from fabric.widgets.wayland import WaylandWindow
 from fabric.widgets.widget import Widget
-
-from gi.repository import GLib
-from gi.repository import Gdk
+from gi.repository import Gdk, GLib
 
 from utils.widget_utils import position_under
 
@@ -100,8 +98,7 @@ class PopupWindow(WaylandWindow):
             self._hide_window()
 
     def _hide_window(self):
-        if not self.use_revealer:
-            self.set_visible(False)
+        self.set_visible(False)
         self._hide_timer_id = None
         return False
 
