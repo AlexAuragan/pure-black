@@ -374,28 +374,41 @@ class HyprlandManager(Service[Any, Any]):
             addrs = ws_clients.get(ws_id, [])
             has_clients = bool(addrs)
 
-            # pick last client address:
-            last_addr = self._workspace_last_client.get(ws_id, "")
+            # pick last client address, but only if it still belongs to this workspace
+            last_addr = self._workspace_last_client.get(ws_id, "") or ""
 
-            # if last addr is missing, try Hyprland workspace last_window (if present and still alive)
-            if last_addr and last_addr not in clients:
+            if last_addr:
+                client = clients.get(last_addr)
+                if client is None or int(client["workspace_id"]) != ws_id:
+                    last_addr = ""
+
+            # if the workspace has no clients, it must not keep an old icon
+            if not addrs:
                 last_addr = ""
+                self._workspace_last_client.pop(ws_id, None)
 
-            if not last_addr:
+            # if last addr is missing, try Hyprland workspace last_window,
+            # but only if it still belongs to this workspace
+            if not last_addr and addrs:
                 ws = self._workspaces.get(ws_id)
                 if ws:
                     candidate = ws.get("last_window", "") or ""
-                    if candidate in clients:
+                    client = clients.get(candidate)
+                    if client is not None and int(client["workspace_id"]) == ws_id:
                         last_addr = candidate
 
-            # fallback: deterministic first client
+            # fallback: deterministic first client currently on this workspace
             if not last_addr and addrs:
                 last_addr = sorted(addrs)[0]
 
+            if last_addr:
+                self._workspace_last_client[ws_id] = last_addr
+
             icon_pixbuf: Pixbuf | None = None
             if last_addr:
-                class_ = self._addr_to_class.get(last_addr, "")
-                icon_pixbuf = self._icon_for_class(class_)
+                client = clients.get(last_addr)
+                if client is not None:
+                    icon_pixbuf = self._icon_for_class(client["class_"])
 
             wi: WorkspaceIcon = {
                 "workspace_id": ws_id,
@@ -633,6 +646,6 @@ class HyprlandManager(Service[Any, Any]):
 
     def focus_workspace_current_monitor(self, workspace_id: int) -> None:
         self.hypr.send_command_async(
-            f'/dispatch hl.dsp.focus({{ workspace = "{workspace_id}" }})',
+            f'/dispatch hl.dsp.focus({{ workspace = "{workspace_id}", on_current_monitor = true }})',
             lambda *_: None,
         )

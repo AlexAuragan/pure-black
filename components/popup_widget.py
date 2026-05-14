@@ -135,12 +135,15 @@ class PopupWidget(EventBox):
         if event.detail == Gdk.NotifyType.INFERIOR:
             return
         if self.interactive:
-            self._close_timer = GLib.timeout_add(100, self._check_should_close)
+            self._close_timer = GLib.timeout_add(100, lambda: self._check_should_close(event))
         else:
             self.popup.close()
 
-    def _check_should_close(self):
-        if not self.popup.is_hovered:
+    def _check_should_close(self, event):
+        """
+        Close if the mouse is not inside the widget nor inside the popover after the timer
+        """
+        if not self.popup._is_hovered:
             self.popup.close()
         self._close_timer = None
         return False  # Do not repeat the timer

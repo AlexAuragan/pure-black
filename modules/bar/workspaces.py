@@ -216,9 +216,8 @@ class HyprlandWorkspaceIcon(EventBox):
     def _on_workspace_icons_notify(self, hyprland: HyprlandManager, workspace_id: int):
         if workspace_id != self.id:
             return
-        if not hyprland.workspace_icons.get(self.id):
-            return
-        icon_pixbuf = hyprland.workspace_icons[self.id]["icon_pixbuf"]
+        entry = hyprland.workspace_icons.get(self.id)
+        icon_pixbuf = entry["icon_pixbuf"] if entry else None
         if icon_pixbuf is None:
             self.content.set_visible_child(self.label)
             self.add_style_class("empty")
