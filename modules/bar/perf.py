@@ -87,9 +87,7 @@ class PerfPopupView(Box):
                 style="font-weight: bold; font-size: 10px; color: var(--accent3);",
             )
         )
-        self.cpu_proc_list = Label(
-            label="...", x_align=0, style="font-family: monospace; font-size: 11px;"
-        )
+        self.cpu_proc_list = Label(label="...", x_align=0, style="font-family: monospace; font-size: 11px;")
         self.cpu_proc_col.add(self.cpu_proc_list)
 
         # Right Column: Top RAM
@@ -101,9 +99,7 @@ class PerfPopupView(Box):
                 style="font-weight: bold; font-size: 10px; color: var(--accent4);",
             )
         )
-        self.mem_proc_list = Label(
-            label="...", x_align=0, style="font-family: monospace; font-size: 11px;"
-        )
+        self.mem_proc_list = Label(label="...", x_align=0, style="font-family: monospace; font-size: 11px;")
         self.mem_proc_col.add(self.mem_proc_list)
 
         self.proc_container.add(self.cpu_proc_col)
@@ -234,7 +230,7 @@ class PerfWidget(PopupWidget):
         while not self._stop.is_set():
             try:
                 procs = []
-                for p in psutil.process_iter(['name', 'cpu_percent', 'memory_percent', 'memory_info'], ad_value=None):
+                for p in psutil.process_iter(["name", "cpu_percent", "memory_percent", "memory_info"], ad_value=None):
                     try:
                         procs.append(p.info)
                     except (psutil.NoSuchProcess, psutil.AccessDenied, OSError):

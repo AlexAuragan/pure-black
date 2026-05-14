@@ -189,9 +189,7 @@ class HyprlandWorkspaceIcon(EventBox):
         self.hyprland = hyprland
         self.app_icons: dict[str, str] = {}
         self._pixbuf_cache: dict[str, Pixbuf] = {}
-        self.last_client_address = (
-            self.hyprland.workspaces.get(self.id, {}).get("last_window") or ""
-        )
+        self.last_client_address = self.hyprland.workspaces.get(self.id, {}).get("last_window") or ""
 
         self.image = Image(**kwargs)
         self.label = Label(
@@ -213,9 +211,7 @@ class HyprlandWorkspaceIcon(EventBox):
         self.connect("leave-notify-event", self.on_hover_exit)
 
         self._on_workspace_icons_notify(hyprland, self.id)
-        self.hyprland.connect(
-            "workspace-icons-changed", self._on_workspace_icons_notify
-        )
+        self.hyprland.connect("workspace-icons-changed", self._on_workspace_icons_notify)
 
     def _on_workspace_icons_notify(self, hyprland: HyprlandManager, workspace_id: int):
         if workspace_id != self.id:
@@ -264,9 +260,7 @@ class HyprlandWorkspaceDummyIcon(EventBox):
 
 
 class HyprlandWorkspacesTray(Overlay):
-    def __init__(
-        self, hyprland: HyprlandManager, monitor_id: int, two_rows=True, **kwargs
-    ):
+    def __init__(self, hyprland: HyprlandManager, monitor_id: int, two_rows=True, **kwargs):
         self.hyprland = hyprland
         self._monitor_id = monitor_id
         # n = max(self.hyprland.workspaces.keys())
@@ -286,16 +280,12 @@ class HyprlandWorkspacesTray(Overlay):
                 spacing=2,
             )
             dummy_first_row = Box(
-                children=[
-                    HyprlandWorkspaceDummyIcon() for i in range(1, (n + 1) // 2 + 1)
-                ],
+                children=[HyprlandWorkspaceDummyIcon() for i in range(1, (n + 1) // 2 + 1)],
                 style_classes=["workspace-row"],
                 spacing=2,
             )
             dummy_second_row = Box(
-                children=[
-                    HyprlandWorkspaceDummyIcon() for i in range((n + 1) // 2 + 1, n + 1)
-                ],
+                children=[HyprlandWorkspaceDummyIcon() for i in range((n + 1) // 2 + 1, n + 1)],
                 style_classes=["workspace-row"],
                 spacing=2,
             )
@@ -339,12 +329,8 @@ class HyprlandWorkspacesTray(Overlay):
             v_align="start",
             v_expand=False,
         )
-        left_cornerh = Corner(
-            orientation="top-right", size=12, style_classes=["hidden"]
-        )  # Same corners but hidden
-        right_cornerh = Corner(
-            orientation="top-left", size=12, style_classes=["hidden"]
-        )
+        left_cornerh = Corner(orientation="top-right", size=12, style_classes=["hidden"])  # Same corners but hidden
+        right_cornerh = Corner(orientation="top-left", size=12, style_classes=["hidden"])
         self.indicator = WorkspaceIndicator(diameter=20, duration_ms=360, ws_tray=self)
         content.set_name("workspaces-content")
         content_background.set_name("workspaces-background")

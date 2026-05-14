@@ -104,7 +104,5 @@ class SystemTray(Box):
 
         self.systray = SysTray(icon_size=16, spacing=4)
         self.clock = ClockWidget()
-        super().__init__(
-            spacing=6, name="systray", children=[self.systray, self.clock], **kwargs
-        )
+        super().__init__(spacing=6, name="systray", children=[self.systray, self.clock], **kwargs)
         self.add_style_class("top-widget")

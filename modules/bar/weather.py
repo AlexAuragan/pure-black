@@ -113,9 +113,7 @@ class WeatherPopupView(Box):
         self.center_col = Box(orientation="v", spacing=6, h_expand=True)
         self.today_icon = Svg(svg_file=icon_file_from_name("cloud"), size=34)
         self.today_icon.add_style_class("weather-icon")
-        self.today_text = Label(
-            name="weather-popup-now", label="--"
-        )  # e.g. "Partly cloudy · 9℃"
+        self.today_text = Label(name="weather-popup-now", label="--")  # e.g. "Partly cloudy · 9℃"
         self.center_col.add(self.today_icon)
         self.center_col.add(self.today_text)
 
@@ -163,9 +161,7 @@ class WeatherPopupView(Box):
             col.add(temps)
 
             self.forecast_row.add(col)
-            self.forecast_cols.append(
-                {"badge": badge, "date": date_lbl, "icon": icon, "temps": temps}
-            )
+            self.forecast_cols.append({"badge": badge, "date": date_lbl, "icon": icon, "temps": temps})
 
         self.add(self.forecast_row)
         self.update(self.weather.data)

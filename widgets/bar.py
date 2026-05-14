@@ -91,21 +91,15 @@ class StatusBar(Window):
         self.audio = audio
         self.clock = ClockWidget()
 
-        _weather = weather_service or WeatherService(
-            city="Paris", fetch_interval_minutes=10, use_uscs=False
-        )
+        _weather = weather_service or WeatherService(city="Paris", fetch_interval_minutes=10, use_uscs=False)
         self.weather_widget = WeatherWidget(_weather)
 
         # self.active_window = ActiveWindowWidget(HyprlandManager())
         self.perf_widget = PerfWidget()
 
-        self.system_status = Box(
-            name="system-status", spacing=4, orientation="h", children=[]
-        )
+        self.system_status = Box(name="system-status", spacing=4, orientation="h", children=[])
         self.active_window = ActiveWindowWidget(self.hyprland, monitor_id)
-        self.workspaces = HyprlandWorkspacesTray(
-            self.hyprland, two_rows=False, monitor_id=monitor_id
-        )
+        self.workspaces = HyprlandWorkspacesTray(self.hyprland, two_rows=False, monitor_id=monitor_id)
         self.systray = SystemTray()
         self.sound = Sound(self.audio) if self.audio is not None else None
         # self.media_player = MediaPlayer(self.audio)

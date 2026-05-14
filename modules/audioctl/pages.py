@@ -105,13 +105,9 @@ class AudioControl(Box):
 
         tabs = Tabs(
             tabs=[
-                TabSpec(
-                    "apps", "Per-App", lambda: StreamListPage(audio, "applications")
-                ),
+                TabSpec("apps", "Per-App", lambda: StreamListPage(audio, "applications")),
                 TabSpec("sinks", "Outputs", lambda: StreamListPage(audio, "speakers")),
-                TabSpec(
-                    "sources", "Inputs", lambda: StreamListPage(audio, "microphones")
-                ),
+                TabSpec("sources", "Inputs", lambda: StreamListPage(audio, "microphones")),
                 TabSpec("opts", "Options", lambda: OptionsPage(audio)),
             ],
             default_key="apps",

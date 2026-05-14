@@ -146,35 +146,48 @@ class HyprlandManager(Service[Any, Any]):
     """
 
     if TYPE_CHECKING:
-        @property
-        def workspaces(self) -> dict[int, Workspace]: return self._workspaces
 
         @property
-        def monitors(self) -> dict[int, Monitor]: return self._monitors
+        def workspaces(self) -> dict[int, Workspace]:
+            return self._workspaces
 
         @property
-        def active_windows(self) -> dict[int, ActiveWindow | None]: return self._active_windows
+        def monitors(self) -> dict[int, Monitor]:
+            return self._monitors
 
         @property
-        def clients(self) -> dict[str, Client]: return self._clients
+        def active_windows(self) -> dict[int, ActiveWindow | None]:
+            return self._active_windows
 
         @property
-        def workspace_icons(self) -> dict[int, WorkspaceIcon]: return self._workspace_icons
+        def clients(self) -> dict[str, Client]:
+            return self._clients
+
+        @property
+        def workspace_icons(self) -> dict[int, WorkspaceIcon]:
+            return self._workspace_icons
+
     else:
+
         @Property(object, "readable", "workspaces", default_value=None)
-        def workspaces(self): return self._workspaces
+        def workspaces(self):
+            return self._workspaces
 
         @Property(object, "readable", "monitors", default_value=None)
-        def monitors(self): return self._monitors
+        def monitors(self):
+            return self._monitors
 
         @Property(object, "readable", "active_windows", default_value=None)
-        def active_windows(self): return self._active_windows
+        def active_windows(self):
+            return self._active_windows
 
         @Property(object, "readable", "clients", default_value=None)
-        def clients(self): return self._clients
+        def clients(self):
+            return self._clients
 
         @Property(object, "readable", "workspace_icons", default_value=None)
-        def workspace_icons(self): return self._workspace_icons
+        def workspace_icons(self):
+            return self._workspace_icons
 
     @Signal(name="workspace-icons-changed")
     def workspace_icons_changed(self, workspace_id: int) -> None: ...
@@ -185,7 +198,7 @@ class HyprlandManager(Service[Any, Any]):
     @Signal(name="monitor-removed")
     def monitor_removed(self, monitor_id: int) -> None: ...
 
-    def __init__(self, hypr: Hyprland | None = None, **kwargs):
+    def __init__(self, hypr: Hyprland | None = None, **kwargs: Any):
         super().__init__(**kwargs)
 
         # transport
@@ -265,14 +278,14 @@ class HyprlandManager(Service[Any, Any]):
         ):
             self.hypr.connect(f"event::{name}", self._on_clients_event)
 
-    def _on_topology_event(self, *_args) -> None:
+    def _on_topology_event(self, *_args: Any) -> None:
         self._schedule_workspaces_refresh()
         self._schedule_monitors_refresh()
 
-    def _on_activewindow_event(self, *_args) -> None:
+    def _on_activewindow_event(self, *_args: Any) -> None:
         self._schedule_activewindow_refresh()
 
-    def _on_clients_event(self, *_args) -> None:
+    def _on_clients_event(self, *_args: Any) -> None:
         self._schedule_clients_refresh()
         self._schedule_workspaces_refresh()
 
@@ -569,11 +582,7 @@ class HyprlandManager(Service[Any, Any]):
             addr = client.get("address")
             if not isinstance(addr, str) or not addr:
                 continue
-            ws = (
-                client.get("workspace")
-                if isinstance(client.get("workspace"), dict)
-                else {}
-            ) or {}
+            ws = (client.get("workspace") if isinstance(client.get("workspace"), dict) else {}) or {}
             at = client.get("at") or [0, 0]
             size = client.get("size") or [0, 0]
             new_client: Client = {
@@ -624,6 +633,6 @@ class HyprlandManager(Service[Any, Any]):
 
     def focus_workspace_current_monitor(self, workspace_id: int) -> None:
         self.hypr.send_command_async(
-        f'/dispatch hl.dsp.focus({{ workspace = "{workspace_id}" }})',
+            f'/dispatch hl.dsp.focus({{ workspace = "{workspace_id}" }})',
             lambda *_: None,
         )

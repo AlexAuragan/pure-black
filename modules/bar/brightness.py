@@ -14,9 +14,7 @@ from gi.repository import Gdk
 
 from services.brightness import BrightnessStream, Brightness
 
-BASE_ICON_PATH = (
-    Path(__file__).parent.parent.parent / "styles" / "pure_black" / "icons" / "pc"
-)
+BASE_ICON_PATH = Path(__file__).parent.parent.parent / "styles" / "pure_black" / "icons" / "pc"
 
 
 class BrightnessScale(EventBox):

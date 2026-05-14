@@ -11,9 +11,7 @@ from components.popup_widget import PopupWidget, PopupWindow
 
 from gi.repository import Gdk
 
-BASE_ICON_PATH = (
-    Path(__file__).parent.parent.parent / "styles" / "pure_black" / "icons" / "pc"
-)
+BASE_ICON_PATH = Path(__file__).parent.parent.parent / "styles" / "pure_black" / "icons" / "pc"
 
 
 class SoundScale(EventBox):

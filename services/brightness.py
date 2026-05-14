@@ -15,9 +15,7 @@ class BrightnessStream(Service[Any, Any]):
     @Signal
     def changed(self) -> None: ...
 
-    def __init__(
-        self, name: str, device_path: str, is_external: bool = False, **kwargs
-    ):
+    def __init__(self, name: str, device_path: str, is_external: bool = False, **kwargs):
         self._model = kwargs.pop("model", None)
         self._mfg = kwargs.pop("mfg", None)
         self._serial = kwargs.pop("serial", None)
@@ -27,9 +25,7 @@ class BrightnessStream(Service[Any, Any]):
         self._device_path = device_path
         self._is_external = is_external
         self._debounce_timer = None
-        self._cached_brightness = (
-            50.0 if is_external else self._get_initial_brightness()
-        )
+        self._cached_brightness = 50.0 if is_external else self._get_initial_brightness()
         if not self._is_external:
             self._bus = Gio.bus_get_sync(Gio.BusType.SYSTEM, None)
 
@@ -82,13 +78,7 @@ class BrightnessStream(Service[Any, Any]):
         try:
             if self._is_external:
                 cmd = f"ddcutil getvcp 10 --bus {self._device_path} --terse"
-                output = (
-                    subprocess.check_output(
-                        cmd.split(), stderr=subprocess.DEVNULL, timeout=2
-                    )
-                    .decode()
-                    .split()
-                )
+                output = subprocess.check_output(cmd.split(), stderr=subprocess.DEVNULL, timeout=2).decode().split()
                 return float(output[3])
             else:
                 return self._read_sysfs()
@@ -105,9 +95,7 @@ class BrightnessStream(Service[Any, Any]):
 
     def _apply_internal_brightness(self, value: float):
         try:
-            variant = GLib.Variant(
-                "(ssu)", ("backlight", self._device_path, int(value))
-            )
+            variant = GLib.Variant("(ssu)", ("backlight", self._device_path, int(value)))
             self._bus.call_sync(
                 "org.freedesktop.login1",
                 "/org/freedesktop/login1",
@@ -120,9 +108,7 @@ class BrightnessStream(Service[Any, Any]):
                 None,
             )
         except Exception:
-            subprocess.Popen(
-                ["brightnessctl", "-d", self._device_path, "s", f"{value}%"]
-            )
+            subprocess.Popen(["brightnessctl", "-d", self._device_path, "s", f"{value}%"])
 
     def _apply_external_brightness(self, value: int):
         bus_number = self._device_path.replace("/dev/i2c-", "")
@@ -175,11 +161,7 @@ class Brightness(Service[Any, Any]):
     def scan_screens(self):
         existing_streams = {}
         for stream in self._screens:
-            key = (
-                (stream.serial or stream._device_path)
-                if stream.is_external
-                else stream._device_path
-            )
+            key = (stream.serial or stream._device_path) if stream.is_external else stream._device_path
             existing_streams[key] = stream
         new_screens = []
         try:
@@ -237,9 +219,7 @@ class Brightness(Service[Any, Any]):
                 ):
                     current_display["model"] = line.split(":", 1)[1].strip()
                     continue
-                if line_lower.startswith(
-                    ("serial", "serial number:", "serial no:", "sn:")
-                ):
+                if line_lower.startswith(("serial", "serial number:", "serial no:", "sn:")):
                     current_display["serial"] = line.split(":", 1)[1].strip()
                     continue
             flush_display()
@@ -319,11 +299,7 @@ class Brightness(Service[Any, Any]):
         # snapshot current streams so the worker doesn't touch GTK objects
         existing = {}
         for stream in self._screens:
-            key = (
-                (stream.serial or stream._device_path)
-                if stream.is_external
-                else stream._device_path
-            )
+            key = (stream.serial or stream._device_path) if stream.is_external else stream._device_path
             existing[key] = stream
 
         def worker(existing_streams_snapshot: dict[str, Any]):
@@ -383,11 +359,7 @@ class Brightness(Service[Any, Any]):
             if ll.startswith("drm connector:"):
                 drm_connector = line.split(":", 1)[1].strip()
                 current["drm_connector"] = drm_connector
-                current["connector_name"] = (
-                    drm_connector.split("-", 1)[1]
-                    if "-" in drm_connector
-                    else drm_connector
-                )
+                current["connector_name"] = drm_connector.split("-", 1)[1] if "-" in drm_connector else drm_connector
                 continue
 
             if ll.startswith("drm_connector_id:"):
@@ -399,15 +371,9 @@ class Brightness(Service[Any, Any]):
                 current["monitor_raw"] = monitor_value
 
                 parts = monitor_value.split(":", 2)
-                current["mfg"] = (
-                    parts[0].strip() if len(parts) > 0 and parts[0].strip() else None
-                )
-                current["model"] = (
-                    parts[1].strip() if len(parts) > 1 and parts[1].strip() else None
-                )
-                current["serial"] = (
-                    parts[2].strip() if len(parts) > 2 and parts[2].strip() else None
-                )
+                current["mfg"] = parts[0].strip() if len(parts) > 0 and parts[0].strip() else None
+                current["model"] = parts[1].strip() if len(parts) > 1 and parts[1].strip() else None
+                current["serial"] = parts[2].strip() if len(parts) > 2 and parts[2].strip() else None
                 continue
 
         flush()
@@ -498,11 +464,7 @@ class Brightness(Service[Any, Any]):
             if ll.startswith("drm connector:"):
                 drm_connector = line.split(":", 1)[1].strip()
                 current["drm_connector"] = drm_connector
-                current["connector_name"] = (
-                    drm_connector.split("-", 1)[1]
-                    if "-" in drm_connector
-                    else drm_connector
-                )
+                current["connector_name"] = drm_connector.split("-", 1)[1] if "-" in drm_connector else drm_connector
                 continue
 
             if ll.startswith("drm_connector_id:"):
@@ -514,15 +476,9 @@ class Brightness(Service[Any, Any]):
                 current["monitor_raw"] = monitor_value
 
                 parts = monitor_value.split(":", 2)
-                current["mfg"] = (
-                    parts[0].strip() if len(parts) > 0 and parts[0].strip() else None
-                )
-                current["model"] = (
-                    parts[1].strip() if len(parts) > 1 and parts[1].strip() else None
-                )
-                current["serial"] = (
-                    parts[2].strip() if len(parts) > 2 and parts[2].strip() else None
-                )
+                current["mfg"] = parts[0].strip() if len(parts) > 0 and parts[0].strip() else None
+                current["model"] = parts[1].strip() if len(parts) > 1 and parts[1].strip() else None
+                current["serial"] = parts[2].strip() if len(parts) > 2 and parts[2].strip() else None
                 continue
 
         flush()
@@ -597,9 +553,7 @@ class Brightness(Service[Any, Any]):
                 return stream
 
             if stream_model and (
-                stream_model in hypr_model
-                or stream_model in hypr_description
-                or hypr_model in stream_model
+                stream_model in hypr_model or stream_model in hypr_description or hypr_model in stream_model
             ):
                 return stream
 
@@ -617,11 +571,7 @@ class Brightness(Service[Any, Any]):
         new_screens: list[BrightnessStream] = []
         existing_streams = {}
         for stream in self._screens:
-            key = (
-                (stream.serial or stream._device_path)
-                if stream.is_external
-                else stream._device_path
-            )
+            key = (stream.serial or stream._device_path) if stream.is_external else stream._device_path
             existing_streams[key] = stream
 
         for item in result:

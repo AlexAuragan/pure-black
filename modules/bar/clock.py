@@ -38,9 +38,7 @@ class ClockWidget(Box):
             ),
         )
 
-        super().__init__(
-            name="clock-widget", orientation="h", spacing=6, children=[self.label]
-        )
+        super().__init__(name="clock-widget", orientation="h", spacing=6, children=[self.label])
 
         self.build(lambda x: self.fabricator)
         self.set_has_tooltip(True)

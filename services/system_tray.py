@@ -1,35 +1,34 @@
+from pathlib import Path
+from typing import Any, Literal, NamedTuple, cast
+
 import gi
+from fabric.core.service import Property, Service, Signal
 from fabric.system_tray.service import (
-    STATUS_NOTIFIER_WATCHER_BUS_NAME,
-    STATUS_NOTIFIER_WATCHER_BUS_IFACE_NODE,
-    STATUS_NOTIFIER_WATCHER_BUS_PATH,
     STATUS_NOTIFIER_ITEM_BUS_IFACE_NODE,
     STATUS_NOTIFIER_ITEM_BUS_NAME,
+    STATUS_NOTIFIER_WATCHER_BUS_IFACE_NODE,
+    STATUS_NOTIFIER_WATCHER_BUS_NAME,
+    STATUS_NOTIFIER_WATCHER_BUS_PATH,
 )
+from fabric.utils.helpers import bulk_connect, get_enum_member
 from gi.repository.GLib import GError
 from loguru import logger
-from pathlib import Path
-from typing import NamedTuple, Literal, Any, cast
-from fabric.core.service import Service, Signal, Property
-from fabric.utils.helpers import bulk_connect, get_enum_member
 
 gi.require_version("Gtk", "3.0")
 gi.require_version("DbusmenuGtk3", "0.4")
 from gi.repository import (
-    Gtk,
-    Gio,
+    DbusmenuGtk3,
     Gdk,
     GdkPixbuf,
-    DbusmenuGtk3,
+    Gio,
     GLib,
+    Gtk,
 )
 
 from utils.find_icon import _resolve_icon_path, guess_icon_path_from_window_class
 
 
-class SystemTrayItemPixmap(
-    NamedTuple
-):  # TODO: i don't think it's good to use NamedTuple, use dataclass instead
+class SystemTrayItemPixmap(NamedTuple):  # TODO: i don't think it's good to use NamedTuple, use dataclass instead
     width: int | None = None
     "icon width size in pixels"
     height: int | None = None
@@ -103,7 +102,7 @@ class SystemTrayItem(Service):
     def __init__(
         self,
         proxy: Gio.DBusProxy,
-        **kwargs,
+        **kwargs: Any,
     ):
         super().__init__(**kwargs)
         self._proxy = proxy
@@ -128,7 +127,7 @@ class SystemTrayItem(Service):
             },
         )
 
-    def on_dbus_signal(self, _, __, signal_name: str, signal_args: tuple[str, ...]):
+    def on_dbus_signal(self, _, __: Any, signal_name: str, signal_args: tuple[str, ...]):
         self.do_cache_proxy_properties()
         signal_to_prop = {
             f"New{dsig}": dsig.lower()
@@ -185,9 +184,7 @@ class SystemTrayItem(Service):
         icon_pixmap = self.icon_pixmap
         attention_icon_pixmap = self.attention_icon_pixmap
 
-        if self.status == "NeedsAttention" and (
-            attention_icon_name is not None or attention_icon_pixmap is not None
-        ):
+        if self.status == "NeedsAttention" and (attention_icon_name is not None or attention_icon_pixmap is not None):
             preferred_icon_name = attention_icon_name
             preferred_icon_pixmap = attention_icon_pixmap
         else:
@@ -214,9 +211,7 @@ class SystemTrayItem(Service):
             path = Path(preferred_icon_name)
             if path.is_absolute() and path.exists():
                 try:
-                    pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_scale(
-                        str(path), target_size, target_size, True
-                    )
+                    pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_scale(str(path), target_size, target_size, True)
                     return self._maybe_monochrome(pixbuf, monochrome, monochrome_tint)
                 except GLib.GError:
                     return None
@@ -224,9 +219,7 @@ class SystemTrayItem(Service):
         # 3) GTK icon theme (respects the item's own IconThemePath)
         if preferred_icon_name:
             icon_theme = self.icon_theme
-            icon_theme_sizes: list = (
-                icon_theme.get_icon_sizes(preferred_icon_name) or []
-            )
+            icon_theme_sizes: list = icon_theme.get_icon_sizes(preferred_icon_name) or []
             icon_theme_sizes.append(target_size)
             try:
                 pixbuf = icon_theme.load_icon(
@@ -248,16 +241,10 @@ class SystemTrayItem(Service):
             for candidate in self._icon_name_candidates(preferred_icon_name):
                 resolved = _resolve_icon_path(candidate)
                 if resolved:
-                    logger.debug(
-                        f"[SystemTray] resolved '{preferred_icon_name}' → '{resolved}' via XDG resolver"
-                    )
+                    logger.debug(f"[SystemTray] resolved '{preferred_icon_name}' → '{resolved}' via XDG resolver")
                     try:
-                        pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_scale(
-                            resolved, target_size, target_size, True
-                        )
-                        return self._maybe_monochrome(
-                            pixbuf, monochrome, monochrome_tint
-                        )
+                        pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_scale(resolved, target_size, target_size, True)
+                        return self._maybe_monochrome(pixbuf, monochrome, monochrome_tint)
                     except GLib.GError:
                         pass
 
@@ -267,13 +254,9 @@ class SystemTrayItem(Service):
             print("resolving", title)
             resolved = guess_icon_path_from_window_class(title)
             if resolved:
-                logger.debug(
-                    f"[SystemTray] resolved icon for '{title}' via desktop-entry: '{resolved}'"
-                )
+                logger.debug(f"[SystemTray] resolved icon for '{title}' via desktop-entry: '{resolved}'")
                 try:
-                    pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_scale(
-                        resolved, target_size, target_size, True
-                    )
+                    pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_scale(resolved, target_size, target_size, True)
                     return self._maybe_monochrome(pixbuf, monochrome, monochrome_tint)
                 except GLib.GError:
                     pass
@@ -457,9 +440,7 @@ class SystemTrayItem(Service):
     def menu(self) -> DbusmenuGtk3.Menu:
         if self._menu is not None:
             return self._menu
-        self._menu = self.do_create_menu(
-            self._proxy.get_name_owner() or "", self.get_menu_object_path()
-        )
+        self._menu = self.do_create_menu(self._proxy.get_name_owner() or "", self.get_menu_object_path())
         return self._menu  # type: ignore
 
     # remote methods
@@ -482,9 +463,7 @@ class SystemTrayItem(Service):
         except GError:
             return None
 
-    def scroll(
-        self, delta: int, orientation: Literal["vertical", "horizontal"]
-    ) -> None:
+    def scroll(self, delta: int, orientation: Literal["vertical", "horizontal"]) -> None:
         return self._proxy.Scroll("(is)", delta, orientation)
 
     # event methods
@@ -498,9 +477,7 @@ class SystemTrayItem(Service):
         return self.secondary_activate(*event.get_root_coords())
 
     def scroll_for_event(self, event: Gdk.EventScroll) -> None:
-        direction = (
-            "vertical" if event.direction == 0 or event.direction == 1 else "horizontal"
-        )
+        direction = "vertical" if event.direction == 0 or event.direction == 1 else "horizontal"
         delta: int = event.delta_y if direction == "vertical" else event.delta_x
         return self.scroll(delta, direction)
 
@@ -511,19 +488,13 @@ class SystemTrayItem(Service):
             return None
         return value.unpack()
 
-    def do_extract_pixmap(
-        self, pixmaps: list[tuple[int, int, bytearray]]
-    ) -> SystemTrayItemPixmap | None:
+    def do_extract_pixmap(self, pixmaps: list[tuple[int, int, bytearray]]) -> SystemTrayItemPixmap | None:
         # only use the biggest icon and ignore all others
         if not pixmaps:  # to handle both None and []
             return None
 
         sorted_pixmap = sorted(pixmaps, key=lambda x: x[0])
-        return (
-            SystemTrayItemPixmap(*sorted_pixmap[-1])
-            if len(sorted_pixmap) >= 1
-            else None
-        )
+        return SystemTrayItemPixmap(*sorted_pixmap[-1]) if len(sorted_pixmap) >= 1 else None
 
     def do_unpack_tooltip(
         self, tooltip: tuple[str, list[tuple[int, int, bytearray]], str, str] | None
@@ -538,11 +509,7 @@ class SystemTrayItem(Service):
         )  # this should be fine
 
     def do_create_menu(self, bus_name: str, bus_path: str) -> DbusmenuGtk3.Menu | None:
-        return (
-            DbusmenuGtk3.Menu().new(bus_name, bus_path)
-            if bus_path not in (None, "")
-            else None
-        )
+        return DbusmenuGtk3.Menu().new(bus_name, bus_path) if bus_path not in (None, "") else None
 
     def do_cache_proxy_properties(self) -> None:
         return self._connection.call(  # "async"
@@ -614,9 +581,7 @@ class SystemTray(Service):
             self._items.pop(item._identifier)
             self.do_notify_unregistered_item(item._identifier)
         except:
-            logger.warning(
-                f"[SystemTray] can't remove tray item with identifier {item._identifier}"
-            )
+            logger.warning(f"[SystemTray] can't remove tray item with identifier {item._identifier}")
         return
 
     def do_register(self) -> int:  # the bus id
@@ -626,14 +591,10 @@ class SystemTray(Service):
             Gio.BusNameOwnerFlags.NONE,
             self.on_bus_acquired,
             None,
-            lambda *_: logger.warning(
-                "[SystemTray] can't own the DBus name, another bar is probably running"
-            ),
+            lambda *_: logger.warning("[SystemTray] can't own the DBus name, another bar is probably running"),
         )
 
-    def on_bus_acquired(
-        self, conn: Gio.DBusConnection, name: str, user_data: object = None
-    ) -> None:
+    def on_bus_acquired(self, conn: Gio.DBusConnection, name: str, user_data: object = None) -> None:
         self._connection = conn
         # we now own the name
         for interface in STATUS_NOTIFIER_WATCHER_BUS_IFACE_NODE.interfaces:
@@ -691,18 +652,12 @@ class SystemTray(Service):
                 prop_name = params[1] if len(params) >= 1 else None
                 match prop_name:
                     case "ProtocolVersion":
-                        invocation.return_value(
-                            GLib.Variant("(v)", (GLib.Variant("i", 1),))
-                        )
+                        invocation.return_value(GLib.Variant("(v)", (GLib.Variant("i", 1),)))
                     case "IsStatusNotifierHostRegistered":
-                        invocation.return_value(
-                            GLib.Variant("(v)", (GLib.Variant("b", True),))
-                        )
+                        invocation.return_value(GLib.Variant("(v)", (GLib.Variant("b", True),)))
                     case "RegisteredStatusNotifierItems":
                         invocation.return_value(
-                            GLib.Variant(
-                                "(v)", (GLib.Variant("as", self._items.keys()),)
-                            ),
+                            GLib.Variant("(v)", (GLib.Variant("as", self._items.keys()),)),
                         )
                     case _:
                         invocation.return_value(None)
@@ -710,9 +665,7 @@ class SystemTray(Service):
                 all_properties = {
                     "ProtocolVersion": GLib.Variant("i", 1),
                     "IsStatusNotifierHostRegistered": GLib.Variant("b", True),
-                    "RegisteredStatusNotifierItems": GLib.Variant(
-                        "as", self._items.keys()
-                    ),
+                    "RegisteredStatusNotifierItems": GLib.Variant("as", self._items.keys()),
                 }
 
                 invocation.return_value(GLib.Variant("(a{sv})", (all_properties,)))
@@ -764,7 +717,7 @@ class SystemTray(Service):
         bus_path: str,
         proxy: Gio.DBusProxy,
         result: Gio.AsyncResult,
-        *args,
+        *args: Any,
     ) -> None:
         # phase 3, we might have gotten a proxy, if so create a new item
         proxy = proxy.new_for_bus_finish(result)
@@ -795,9 +748,7 @@ class SystemTray(Service):
         return
 
     def do_notify_registered_item(self, identifier: str) -> None:
-        self.do_emit_bus_signal(
-            "StatusNotifierItemRegistered", GLib.Variant("(s)", (identifier,))
-        )
+        self.do_emit_bus_signal("StatusNotifierItemRegistered", GLib.Variant("(s)", (identifier,)))
         self.item_added(identifier)
         self.changed()
         return

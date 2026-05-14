@@ -174,14 +174,10 @@ class WeatherService(Service[Any]):
             if not raw or not raw.strip():
                 return None
             try:
-                out = subprocess.check_output(
-                    self._build_jq_cmd(), input=raw, timeout=10
-                )
+                out = subprocess.check_output(self._build_jq_cmd(), input=raw, timeout=10)
                 return json.loads(out.decode("utf-8"))
             except Exception:
-                out = subprocess.check_output(
-                    self._build_jq_fallback_cmd(), input=raw, timeout=10
-                )
+                out = subprocess.check_output(self._build_jq_fallback_cmd(), input=raw, timeout=10)
                 return json.loads(out.decode("utf-8"))
         except Exception:
             return None
@@ -214,12 +210,8 @@ class WeatherService(Service[Any]):
             forecast.append(
                 {
                     "date": str(day.get("date", "")),
-                    "sunrise": convert_to_sane_hour_format(
-                        str(astronomy_day.get("sunrise", "0.0"))
-                    ),
-                    "sunset": convert_to_sane_hour_format(
-                        str(astronomy_day.get("sunset", "0.0"))
-                    ),
+                    "sunrise": convert_to_sane_hour_format(str(astronomy_day.get("sunrise", "0.0"))),
+                    "sunset": convert_to_sane_hour_format(str(astronomy_day.get("sunset", "0.0"))),
                     "wCode": str(wcode),
                     "temp_max": temp_max,
                     "temp_min": temp_min,
@@ -236,8 +228,7 @@ class WeatherService(Service[Any]):
             "sunset": convert_to_sane_hour_format(sunset),
             "windDir": current.get("winddir16Point", "N"),
             "wCode": current.get("weatherCode", "113"),
-            "city": self.city
-            or (location.get("areaName", [{}])[0] or {}).get("value", "City"),
+            "city": self.city or (location.get("areaName", [{}])[0] or {}).get("value", "City"),
             "wind": 0,
             "precip": 0,
             "temp": 0,

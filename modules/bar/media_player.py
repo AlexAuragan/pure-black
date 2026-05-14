@@ -87,9 +87,7 @@ class MediaPlayer(PopupWidget):
         )
         self.add_style_class("top-widget")
 
-        self.audio_service.connect(
-            "notify::applications", self.popup_window.on_applications_set
-        )
+        self.audio_service.connect("notify::applications", self.popup_window.on_applications_set)
         self.connect("button-press-event", self.on_button_press)
 
     @staticmethod

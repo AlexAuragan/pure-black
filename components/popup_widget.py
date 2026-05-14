@@ -28,7 +28,7 @@ class PopupWindow(WaylandWindow):
             # "swing-down",
         ] = "slide-down",
         transition_duration: int = 250,
-        **kwargs,
+        **kwargs: Any,
     ):
         self.use_revealer = use_revealer
         self.transition_duration = transition_duration
@@ -57,17 +57,17 @@ class PopupWindow(WaylandWindow):
         self.add_style_class("popup-window")
         self.on_before_show = on_before_show or (lambda *args: None)
         self.view = child_view
-        self.is_hovered = False
+        self._is_hovered = False
         self.connect("enter-notify-event", self._on_enter)
         self.connect("leave-notify-event", self._on_leave)
 
     def _on_enter(self, widget, event):
-        self.is_hovered = True
+        self._is_hovered = True
 
     def _on_leave(self, widget, event):
         if event.detail == Gdk.NotifyType.INFERIOR:
             return
-        self.is_hovered = False
+        self._is_hovered = False
         self.close()
 
     def open_under(self, parent_widget):
@@ -91,9 +91,7 @@ class PopupWindow(WaylandWindow):
             self.revealer.unreveal()
             if self._hide_timer_id is not None:
                 GLib.source_remove(self._hide_timer_id)
-            self._hide_timer_id = GLib.timeout_add(
-                self.transition_duration, self._hide_window
-            )
+            self._hide_timer_id = GLib.timeout_add(self.transition_duration, self._hide_window)
         else:
             self._hide_window()
 
@@ -109,7 +107,7 @@ class PopupWidget(EventBox):
         main_widget: Widget,
         popup_window: PopupWindow,
         interactive: bool = False,
-        **kwargs,
+        **kwargs: Any,
     ):
         super().__init__(child=main_widget, **kwargs)
         self.popup = popup_window

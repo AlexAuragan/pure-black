@@ -26,12 +26,8 @@ class Svg(FabricSvg):
         style_classes: Iterable[str] | str | None = None,
         tooltip_text: str | None = None,
         tooltip_markup: str | None = None,
-        h_align: (
-            Literal["fill", "start", "end", "center", "baseline"] | Gtk.Align | None
-        ) = None,
-        v_align: (
-            Literal["fill", "start", "end", "center", "baseline"] | Gtk.Align | None
-        ) = None,
+        h_align: Literal["fill", "start", "end", "center", "baseline"] | Gtk.Align | None = None,
+        v_align: Literal["fill", "start", "end", "center", "baseline"] | Gtk.Align | None = None,
         h_expand: bool = False,
         v_expand: bool = False,
         **kwargs,
@@ -77,9 +73,7 @@ class Svg(FabricSvg):
             final_style = bridge_css
 
         if not self._handle.set_stylesheet(final_style.encode()):
-            logger.error(
-                "[Svg] Failed to apply styles, probably invalid style property"
-            )
+            logger.error("[Svg] Failed to apply styles, probably invalid style property")
 
         alloc = self.get_allocation()
         width: int = alloc.width  # type: ignore

@@ -31,11 +31,7 @@ class ActiveWindowWidget(Box):
 
         self.test_audio = Audio()
 
-        _ws_id = (
-            self.hypr.workspaces[self.mon_id]["id"]
-            if self.mon_id in self.hypr.workspaces
-            else None
-        )
+        _ws_id = self.hypr.workspaces[self.mon_id]["id"] if self.mon_id in self.hypr.workspaces else None
         icon_id: int | None = int(_ws_id) if _ws_id is not None else None
         self.icon = Label(
             name="active_workspace_label",

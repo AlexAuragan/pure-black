@@ -40,9 +40,7 @@ class DesktopEntry:
 
 def _xdg_data_dirs() -> list[Path]:
     data_home = Path(os.environ.get("XDG_DATA_HOME", str(Path.home() / ".local/share")))
-    data_dirs = os.environ.get("XDG_DATA_DIRS", "/usr/local/share:/usr/share").split(
-        ":"
-    )
+    data_dirs = os.environ.get("XDG_DATA_DIRS", "/usr/local/share:/usr/share").split(":")
     return [data_home] + [Path(p) for p in data_dirs if p]
 
 
