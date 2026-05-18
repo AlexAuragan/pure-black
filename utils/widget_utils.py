@@ -1,4 +1,8 @@
-def position_under(widget, popup, gap=4):
+from fabric.widgets.wayland import WaylandWindow
+from fabric.widgets.widget import Widget
+
+
+def position_under(widget: Widget, popup: WaylandWindow, gap: int = 4) -> None:
     # widget allocation (relative to its toplevel)
     alloc = widget.get_allocation()
 

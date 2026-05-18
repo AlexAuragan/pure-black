@@ -9,7 +9,7 @@ from collections import Counter
 
 
 class MainLoopStallWatchdog:
-    def __init__(self, threshold_ms=200, cooldown_ms=800, print_top_n=5):
+    def __init__(self, threshold_ms: int = 200, cooldown_ms: int = 800, print_top_n: int = 5):
         self.threshold_s = threshold_ms / 1000.0
         self.cooldown_s = cooldown_ms / 1000.0
         self.print_top_n = print_top_n

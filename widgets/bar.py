@@ -7,6 +7,8 @@ PROJECT_DIR = os.path.dirname(os.path.realpath(Path(__file__).parent))
 if PROJECT_DIR not in sys.path:
     sys.path.insert(0, PROJECT_DIR)
 
+from typing import Any
+
 from fabric import Application
 from gi.repository import Gdk, GLib
 
@@ -14,6 +16,7 @@ from fabric.widgets.wayland import WaylandWindow as Window
 
 from fabric.widgets.centerbox import CenterBox
 from fabric.widgets.box import Box
+from fabric.widgets.separator import Separator
 
 
 from modules.bar.active_window import ActiveWindowWidget
@@ -24,8 +27,10 @@ from modules.bar.perf import PerfWidget
 from modules.bar.systray import SystemTray
 from modules.bar.weather import WeatherWidget
 from modules.bar.workspaces import HyprlandWorkspacesTray
+from modules.notification_center import NotificationCenter, NotificationPopup
 from services.brightness import Brightness
 from services.hyprland import HyprlandManager
+from services.notifications import NotificationService
 from services.weather import WeatherService
 
 audio_widget: bool = True
@@ -56,9 +61,10 @@ class StatusBar(Window):
         self,
         monitor_id: int,
         hyprland: HyprlandManager | None = None,
-        audio=None,
+        audio: Any = None,
         weather_service: WeatherService | None = None,
         brightness_service: Brightness | None = None,
+        notif_service: NotificationService | None = None,
     ):
         """
         - begin
@@ -101,6 +107,8 @@ class StatusBar(Window):
         self.active_window = ActiveWindowWidget(self.hyprland, monitor_id)
         self.workspaces = HyprlandWorkspacesTray(self.hyprland, two_rows=False, monitor_id=monitor_id)
         self.systray = SystemTray()
+        _notif = notif_service or NotificationService(hyprland=self.hyprland)
+        self.notif_center = NotificationCenter(_notif)
         self.sound = Sound(self.audio) if self.audio is not None else None
         # self.media_player = MediaPlayer(self.audio)
         _brightness = brightness_service or Brightness(self.hyprland)
@@ -125,9 +133,19 @@ class StatusBar(Window):
             name="bar-inner",
             start_children=self.left_box,
             center_children=self.center_box,
-            end_children=self.systray,
-            h_align="fill",  # / fill / baseline / start
-            h_expand=True,  # / False
+            end_children=Box(
+                name="bar-end-box",
+                orientation="h",
+                spacing=6,
+                style_classes=["top-widget"],
+                children=[
+                    self.notif_center,
+                    Separator(orientation="v", name="end-sep"),
+                    self.systray,
+                ],
+            ),
+            h_align="fill",
+            h_expand=True,
         )
 
         self.show_all()
@@ -136,13 +154,14 @@ class StatusBar(Window):
 if __name__ == "__main__":
     os.environ["XDG_DATA_DIRS"] = "/usr/local/share:/usr/share"
 
-    def make_bar(monitor_id):
+    def make_bar(monitor_id: int) -> StatusBar:
         return StatusBar(
             monitor_id=monitor_id,
             hyprland=hypr_manager,
             audio=shared_audio,
             weather_service=shared_weather,
             brightness_service=shared_brightness,
+            notif_service=shared_notif,
         )
 
     _rebuild_pending = [None]  # holds the GLib source id for the debounce timer
@@ -159,7 +178,7 @@ if __name__ == "__main__":
         bars.clear()
         monitor_ids = list(hypr_manager.monitors.keys())
 
-        def create_next(idx):
+        def create_next(idx: int) -> bool:
             if idx >= len(monitor_ids):
                 return False
             mid = monitor_ids[idx]
@@ -178,12 +197,14 @@ if __name__ == "__main__":
     shared_audio = Audio() if Audio is not None else None
     shared_weather = WeatherService(city="Paris", fetch_interval_minutes=10, use_uscs=False)
     shared_brightness = Brightness(hypr_manager)
+    shared_notif = NotificationService(hyprland=hypr_manager)
+    shared_popup = NotificationPopup(shared_notif)
 
     hypr_manager.connect("monitor-added", rebuild_bars)
     hypr_manager.connect("monitor-removed", rebuild_bars)
 
     bars = {mid: make_bar(mid) for mid in hypr_manager.monitors}
-    app = Application("bars", *bars.values())
+    app = Application("bars", *bars.values(), shared_popup)
     css_path = os.path.join(PROJECT_DIR, "styles/pure_black/style.css")
     app.set_stylesheet_from_file(css_path)
     app.run()

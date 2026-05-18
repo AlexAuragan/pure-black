@@ -16,7 +16,7 @@ from fabric.widgets.wayland import WaylandWindow
 
 from components import Svg
 
-from gi.repository import GLib, Gdk
+from gi.repository import GLib, Gdk, Gtk
 
 from components.popup_widget import PopupWidget, PopupWindow
 from utils.widget_utils import position_under
@@ -27,7 +27,7 @@ GAP = 4
 
 
 class PerfPopupView(Box):
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Any):
         super().__init__(
             name="perf-popup",
             orientation="v",
@@ -108,7 +108,7 @@ class PerfPopupView(Box):
 
         self.add(Separator())
 
-    def update_display(self, data):
+    def update_display(self, data: dict[str, Any]) -> None:
         if not self.get_visible():
             return
         self.is_init = True
@@ -150,7 +150,7 @@ class PerfPopupView(Box):
 
 
 class PerfPopupWindow(WaylandWindow):
-    def __init__(self, perf_data: Fabricator[Any], **kwargs):
+    def __init__(self, perf_data: Fabricator[Any], **kwargs: Any):
         self.view = PerfPopupView()
         super().__init__(
             name="perf-popup-window",
@@ -165,12 +165,12 @@ class PerfPopupWindow(WaylandWindow):
         self.compute_repeater = None
         perf_data.connect("changed", self.on_data_received)
 
-    def on_data_received(self, fabricator, data):
+    def on_data_received(self, fabricator: Fabricator[Any], data: dict[str, Any]) -> None:
         # Only update the labels if the popup is actually visible to save CPU
         if self.get_visible() or not self.view.is_init:
             self.view.update_display(data)
 
-    def open(self, widget):
+    def open(self, widget: Gtk.Widget) -> None:
         position_under(widget, self)
         self.set_visible(True)
 
@@ -256,7 +256,7 @@ class PerfWidget(PopupWidget):
             self.popup_view.update_display(data)
 
     @staticmethod
-    def on_button_press(widget, event):
+    def on_button_press(widget: Gtk.Widget, event: Gdk.Event) -> None:
         if event.button == 1:
             widget.on_left_click()
 

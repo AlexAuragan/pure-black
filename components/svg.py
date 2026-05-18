@@ -1,6 +1,6 @@
 from os import PathLike
 from pathlib import Path
-from typing import Literal, Iterable
+from typing import Any, Literal, Iterable
 
 from gi.overrides.Gtk import Gtk
 from gi.repository import Rsvg
@@ -30,7 +30,7 @@ class Svg(FabricSvg):
         v_align: Literal["fill", "start", "end", "center", "baseline"] | Gtk.Align | None = None,
         h_expand: bool = False,
         v_expand: bool = False,
-        **kwargs,
+        **kwargs: Any,
     ):
         if isinstance(svg_file, Path):
             svg_file = str(svg_file)

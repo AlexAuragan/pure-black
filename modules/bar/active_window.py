@@ -1,3 +1,5 @@
+from typing import Any
+
 from fabric.widgets.box import Box
 from fabric.widgets.label import Label
 from fabric.audio.service import Audio
@@ -25,7 +27,7 @@ def shorten_title(string: str):
 
 
 class ActiveWindowWidget(Box):
-    def __init__(self, hypr: HyprlandManager, mon_id: int, **kwargs):
+    def __init__(self, hypr: HyprlandManager, mon_id: int, **kwargs: Any):
         self.hypr = hypr
         self.mon_id = mon_id
 

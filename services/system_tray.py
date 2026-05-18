@@ -291,7 +291,7 @@ class SystemTrayItem(Service):
         self,
         pixbuf: GdkPixbuf.Pixbuf,
         size: int | None,
-        resize_method,
+        resize_method: str | GdkPixbuf.InterpType,
     ) -> GdkPixbuf.Pixbuf:
         if size is None:
             return pixbuf
@@ -559,7 +559,7 @@ class SystemTray(Service):
     @Signal
     def item_removed(self, item_identifier: str) -> None: ...
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Any):
         super().__init__(**kwargs)
         self._items: dict[str, SystemTrayItem] = {}
         self._connection: Gio.DBusConnection | None = None

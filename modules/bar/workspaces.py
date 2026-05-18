@@ -4,6 +4,7 @@ import math
 import sys
 import threading
 import time
+from typing import Any
 
 from fabric.widgets.box import Box
 from fabric.widgets.eventbox import EventBox
@@ -12,7 +13,7 @@ from fabric.widgets.label import Label
 from fabric.widgets.overlay import Overlay
 from fabric.widgets.stack import Stack
 
-from gi.repository import Gdk, GLib
+from gi.repository import Gdk, GLib, GObject, Gtk
 from gi.repository.GdkPixbuf import Pixbuf
 from gi.repository.Gtk import Align
 
@@ -35,7 +36,7 @@ class WorkspaceIndicator(Box):
         diameter: int,
         duration_ms: int,
         ws_tray: "HyprlandWorkspacesTray",
-        **kwargs,
+        **kwargs: Any,
     ):
         super().__init__(**kwargs)
         self.ws_id: int | None = None
@@ -183,7 +184,7 @@ class WorkspaceIndicator(Box):
 
 
 class HyprlandWorkspaceIcon(EventBox):
-    def __init__(self, idx: int, hyprland: HyprlandManager, monitor_id: int, **kwargs):
+    def __init__(self, idx: int, hyprland: HyprlandManager, monitor_id: int, **kwargs: Any):
         self.id = idx
         self._monitor_id = monitor_id
         self.hyprland = hyprland
@@ -226,7 +227,7 @@ class HyprlandWorkspaceIcon(EventBox):
         self.content.set_visible_child(self.image)
         self.remove_style_class("empty")
 
-    def on_button_press(self, widget: "HyprlandWorkspaceIcon", event):
+    def on_button_press(self, widget: "HyprlandWorkspaceIcon", event: Gdk.Event) -> bool:
         if event.button == 1:
             widget.on_left_click()
         return True
@@ -234,7 +235,7 @@ class HyprlandWorkspaceIcon(EventBox):
     def on_left_click(self, *_):
         self.hyprland.focus_workspace_current_monitor(self.id)
 
-    def on_hover_exit(self, widget, event):
+    def on_hover_exit(self, widget: Gtk.Widget, event: Gdk.Event) -> None:
         if event.detail == Gdk.NotifyType.INFERIOR:
             # Ignore leaving into a child widget
             return
@@ -259,7 +260,7 @@ class HyprlandWorkspaceDummyIcon(EventBox):
 
 
 class HyprlandWorkspacesTray(Overlay):
-    def __init__(self, hyprland: HyprlandManager, monitor_id: int, two_rows=True, **kwargs):
+    def __init__(self, hyprland: HyprlandManager, monitor_id: int, two_rows: bool = True, **kwargs: Any):
         self.hyprland = hyprland
         self._monitor_id = monitor_id
         # n = max(self.hyprland.workspaces.keys())
@@ -375,7 +376,7 @@ class HyprlandWorkspacesTray(Overlay):
         self.set_active_class(ws_id)
         return False
 
-    def _on_monitors(self, hyprland: HyprlandManager, event):
+    def _on_monitors(self, hyprland: HyprlandManager, event: GObject.ParamSpec) -> None:
         mon_id = self.monitor_id
         mon = hyprland.monitors.get(mon_id)
         if not mon:

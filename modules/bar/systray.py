@@ -1,7 +1,10 @@
+from typing import Any
+
 from fabric.widgets.box import Box
 from fabric.widgets.button import Button
 from fabric.widgets.image import Image
 from loguru import logger
+from gi.repository import Gdk
 from services.system_tray import (
     SystemTray as SystemTrayService,
     SystemTrayItem as SystemTrayItemService,
@@ -19,7 +22,7 @@ def get_tray_watcher() -> SystemTrayService:
 
 
 class SystemTrayItem(Button):
-    def __init__(self, item: SystemTrayItemService, icon_size: int, **kwargs):
+    def __init__(self, item: SystemTrayItemService, icon_size: int, **kwargs: Any):
         super().__init__(**kwargs)
         self._item = item
         self._icon_size = icon_size
@@ -52,7 +55,7 @@ class SystemTrayItem(Button):
         )
         return
 
-    def on_clicked(self, _, event):
+    def on_clicked(self, _, event: Gdk.Event) -> None:
         match event.button:
             case 1:
                 try:
@@ -67,7 +70,7 @@ class SystemTrayItem(Button):
 
 
 class SysTray(Box):
-    def __init__(self, icon_size: int = 24, **kwargs):
+    def __init__(self, icon_size: int = 24, **kwargs: Any):
         super().__init__(**kwargs)
         self._icon_size = icon_size
         self._items: dict[str, SystemTrayItem] = {}
@@ -89,7 +92,7 @@ class SysTray(Box):
         self._items[item.identifier] = item_button
         return
 
-    def on_item_removed(self, _, item_identifier):
+    def on_item_removed(self, _, item_identifier: str) -> None:
         item_button = self._items.get(item_identifier)
         if not item_button:
             return
@@ -100,9 +103,8 @@ class SysTray(Box):
 
 
 class SystemTray(Box):
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Any):
 
         self.systray = SysTray(icon_size=16, spacing=4)
         self.clock = ClockWidget()
         super().__init__(spacing=6, name="systray", children=[self.systray, self.clock], **kwargs)
-        self.add_style_class("top-widget")

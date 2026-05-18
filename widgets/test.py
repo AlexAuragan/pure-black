@@ -1,4 +1,4 @@
-from typing import cast
+from typing import Any, cast
 
 from fabric import Application
 from fabric.widgets.box import Box
@@ -17,7 +17,7 @@ NOTIFICATION_TIMEOUT = 10 * 1000  # 10 seconds
 
 
 class NotificationWidget(Box):
-    def __init__(self, notification: Notification, **kwargs):
+    def __init__(self, notification: Notification, **kwargs: Any):
         super().__init__(
             size=(NOTIFICATION_WIDTH, -1),
             name="notification",

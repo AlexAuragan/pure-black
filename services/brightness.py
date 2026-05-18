@@ -15,7 +15,7 @@ class BrightnessStream(Service[Any, Any]):
     @Signal
     def changed(self) -> None: ...
 
-    def __init__(self, name: str, device_path: str, is_external: bool = False, **kwargs):
+    def __init__(self, name: str, device_path: str, is_external: bool = False, **kwargs: Any):
         self._model = kwargs.pop("model", None)
         self._mfg = kwargs.pop("mfg", None)
         self._serial = kwargs.pop("serial", None)
@@ -142,7 +142,7 @@ class Brightness(Service[Any, Any]):
     @Signal
     def screen_added(self) -> None: ...
 
-    def __init__(self, hyprland: HyprlandManager, **kwargs):
+    def __init__(self, hyprland: HyprlandManager, **kwargs: Any):
         super().__init__(**kwargs)
         self._hyprland = hyprland
         self._screens: list[BrightnessStream] = []
@@ -559,7 +559,7 @@ class Brightness(Service[Any, Any]):
 
         return None
 
-    def _scan_screens_apply(self, result):
+    def _scan_screens_apply(self, result: Any) -> None:
         self._scan_thread_running = False
 
         if isinstance(result, Exception):

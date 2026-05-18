@@ -15,7 +15,7 @@ from gi.repository import Cvc
 from components import Svg
 from components.popup_widget import PopupWidget, PopupWindow
 
-from gi.repository import Gdk
+from gi.repository import Gdk, Gtk
 
 BASE_ICON_PATH = Path("styles") / "pure_black" / "icons" / "pc"
 
@@ -56,7 +56,7 @@ class ApplicationList(PopupWindow):
 
 
 class MediaIcon(Box):
-    def __init__(self, audio_service: Audio, volume=0):
+    def __init__(self, audio_service: Audio, volume: int = 0):
         self.audio_service = audio_service
         self._volume: int = volume
         self.icon = Svg(self.volume_to_path(), size=24)
@@ -91,7 +91,7 @@ class MediaPlayer(PopupWidget):
         self.connect("button-press-event", self.on_button_press)
 
     @staticmethod
-    def on_button_press(widget, event):
+    def on_button_press(widget: Gtk.Widget, event: Gdk.Event) -> None:
         if event.button == 1:
             widget.on_left_click()
 

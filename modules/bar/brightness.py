@@ -1,5 +1,6 @@
 import subprocess
 from pathlib import Path
+from typing import Any
 from loguru import logger
 
 from fabric.widgets.box import Box
@@ -10,7 +11,7 @@ from components import Svg
 from components.popup_widget import PopupWidget, PopupWindow
 
 
-from gi.repository import Gdk
+from gi.repository import Gdk, Gtk
 
 from services.brightness import BrightnessStream, Brightness
 
@@ -62,7 +63,7 @@ class BrightnessScale(EventBox):
         self.brightness_bar.set_value(value)
         self._syncing = False
 
-    def _on_bar_changed(self, scale):
+    def _on_bar_changed(self, scale: Scale) -> None:
         if self._syncing or not self._current_stream:
             return
         self._current_stream.screen_brightness = float(scale.get_value())
@@ -73,7 +74,7 @@ class BrightnessScale(EventBox):
         new_val = self._current_stream.screen_brightness + delta
         self._current_stream.screen_brightness = max(0, min(100, new_val))
 
-    def on_scroll(self, widget, event):
+    def on_scroll(self, widget: Gtk.Widget, event: Gdk.Event) -> None:
         if event.direction == Gdk.ScrollDirection.SMOOTH:
             success, _, delta_y = event.get_scroll_deltas()
             if success:
@@ -142,7 +143,7 @@ class BrightnessWidget(PopupWidget):
 
         self._on_brightness_changed()
 
-    def _on_brightness_changed(self, *args):
+    def _on_brightness_changed(self, *args: Any) -> None:
         # Get the specific stream from the service
         match = self.brightness_service.get_screen_for_monitor(self.screen_id)
 
@@ -150,11 +151,11 @@ class BrightnessWidget(PopupWidget):
         self.brightness_icon.update_stream(match)
         self.popup_view.update_stream(match)
 
-    def on_scroll(self, _, event):
+    def on_scroll(self, _: Gtk.Widget, event: Gdk.Event) -> None:
         self.popup_view.on_scroll(_, event)
 
     @staticmethod
-    def on_button_press(widget, event):
+    def on_button_press(widget: Gtk.Widget, event: Gdk.Event) -> None:
         if event.button == 1:
             # TODO Maybe open display settings ?
             subprocess.Popen(["wdisplays"])

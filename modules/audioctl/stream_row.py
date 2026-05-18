@@ -1,11 +1,14 @@
 from __future__ import annotations
 
+from typing import Any
+
 from fabric.widgets.box import Box
 from fabric.widgets.button import Button
 from fabric.widgets.label import Label
 from fabric.widgets.scale import Scale
 
 from fabric.audio.service import AudioStream
+from gi.repository import GObject
 
 
 class StreamRow(Box):
@@ -68,13 +71,13 @@ class StreamRow(Box):
         label = "Unmute" if muted else "Mute"
         self.mute_btn.set_label(label)  # type: ignore[attr-defined]
 
-    def _on_stream_volume_changed(self, _stream: AudioStream, _pspec) -> None:
+    def _on_stream_volume_changed(self, _stream: AudioStream, _pspec: GObject.ParamSpec) -> None:
         self._set_scale(self.stream.volume)
 
-    def _on_stream_mute_changed(self, _stream: AudioStream, _pspec) -> None:
+    def _on_stream_mute_changed(self, _stream: AudioStream, _pspec: GObject.ParamSpec) -> None:
         self._set_mute_label(self.stream.muted)
 
-    def _on_scale_changed(self, _scale) -> None:
+    def _on_scale_changed(self, _scale: Scale) -> None:
         if self._syncing:
             return
         # Clamp and set
@@ -85,5 +88,5 @@ class StreamRow(Box):
             v = 100
         self.stream.volume = v
 
-    def _on_toggle_mute(self, _btn, *_args) -> None:
+    def _on_toggle_mute(self, _btn: Button, *_args: Any) -> None:
         self.stream.muted = not self.stream.muted

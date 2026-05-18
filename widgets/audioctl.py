@@ -4,7 +4,7 @@ from fabric.widgets.wayland import WaylandWindow
 from fabric.audio.service import Audio
 
 from modules.audioctl.pages import AudioControl
-from gi.repository import Gdk
+from gi.repository import Gdk, Gtk
 
 
 class AudioCTL:
@@ -23,16 +23,16 @@ class AudioCTL:
             keyboard_mode="on-demand",
         )
 
-        def on_enter(window, event):
+        def on_enter(window: WaylandWindow, event: Gdk.Event) -> None:
             self.has_been_entered = True
 
-        def on_key_press(window, event):
+        def on_key_press(window: WaylandWindow, event: Gdk.Event) -> bool:
             if event.keyval == Gdk.KEY_Escape:
                 window.destroy()
                 return True
             return False
 
-        def on_focus_out(window, event):
+        def on_focus_out(window: WaylandWindow, event: Gdk.Event) -> bool:
             if self.has_been_entered:
                 window.destroy()
             return False

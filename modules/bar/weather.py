@@ -10,6 +10,7 @@ from fabric.widgets.box import Box
 from fabric.widgets.label import Label
 from fabric.widgets.separator import Separator
 from components import Svg
+from gi.repository import Gdk, Gtk
 
 from components.popup_widget import PopupWidget, PopupWindow
 from services.weather import WeatherService, WeatherServiceData
@@ -79,7 +80,7 @@ ICON_NAME_TO_TAG = {
 
 
 class WeatherPopupView(Box):
-    def __init__(self, weather: WeatherService, **kwargs):
+    def __init__(self, weather: WeatherService, **kwargs: Any):
         super().__init__(
             name="weather-popup",
             orientation="v",
@@ -241,12 +242,12 @@ class WeatherPopupView(Box):
         self.update(self.weather.data)
 
 
-def tag_from_wcode(wcode) -> str:
+def tag_from_wcode(wcode: int | str | None) -> str:
     icon_name = icon_name_from_wcode(wcode)
     return ICON_NAME_TO_TAG.get(icon_name, "Unknown")
 
 
-def icon_name_from_wcode(wcode) -> str:
+def icon_name_from_wcode(wcode: int | str | None) -> str:
     if wcode is None:
         return "cloud"
     return WEATHER_CODE_TO_ICON_NAME.get(str(wcode), "cloud")
@@ -273,7 +274,7 @@ def icon_file_from_name(name: str) -> str:
     return mapping.get(name, f"{base}/cloud.svg")
 
 
-def _fmt_day(day: dict[str, Any], temp_unit) -> str:
+def _fmt_day(day: dict[str, Any], temp_unit: str) -> str:
     icon = icon_name_from_wcode(day.get("wCode"))
     tag = tag_from_wcode(day.get("wCode"))
 
@@ -286,7 +287,7 @@ def _fmt_day(day: dict[str, Any], temp_unit) -> str:
 
 
 class WeatherWidget(PopupWidget):
-    def __init__(self, weather: WeatherService, **kwargs):
+    def __init__(self, weather: WeatherService, **kwargs: Any):
         self.weather = weather
         view = WeatherPopupView(self.weather)
         self.popup = PopupWindow(view, on_before_show=view.on_before_show)
@@ -320,7 +321,7 @@ class WeatherWidget(PopupWidget):
             self.popup.view.update(data)
 
     @staticmethod
-    def on_button_press(widget, event):
+    def on_button_press(widget: Gtk.Widget, event: Gdk.Event) -> None:
         if event.button == 1:
             widget.on_left_click()
 

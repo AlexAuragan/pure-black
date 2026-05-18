@@ -6,7 +6,7 @@ from fabric.widgets.button import Button
 from fabric.widgets.eventbox import EventBox
 from fabric.widgets.shapes import Corner
 from fabric.widgets.stack import Stack
-from gi.repository import Gdk
+from gi.repository import Gdk, Gtk
 
 
 @dataclass(frozen=True)
@@ -22,7 +22,7 @@ class FolderTab(Box):
       [left corner][button area][right corner]
     """
 
-    def __init__(self, title: str, on_click):
+    def __init__(self, title: str, on_click: Callable[[Button], None]):
         self.on_click = on_click
         self.left = Corner(
             orientation="bottom-right",
@@ -152,7 +152,7 @@ class Tabs(EventBox):
             key = spec.key
 
             def make_handler(tab_key: str):
-                def handler(_btn):
+                def handler(_btn: Button) -> None:
                     self.set_current(tab_key)
 
                 return handler
@@ -176,7 +176,7 @@ class Tabs(EventBox):
         if tab is not None:
             tab.focus()
 
-    def _on_key_pressed(self, widget, event) -> bool:
+    def _on_key_pressed(self, widget: Gtk.Widget, event: Gdk.Event) -> bool:
         """
         Handle Tab / Shift+Tab to move across tabs.
         Optionally handle Enter/Space to activate the focused tab again.

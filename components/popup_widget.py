@@ -4,7 +4,7 @@ from fabric.widgets.eventbox import EventBox
 from fabric.widgets.revealer import Revealer
 from fabric.widgets.wayland import WaylandWindow
 from fabric.widgets.widget import Widget
-from gi.repository import Gdk, GLib
+from gi.repository import Gdk, GLib, Gtk
 
 from utils.widget_utils import position_under
 
@@ -61,16 +61,16 @@ class PopupWindow(WaylandWindow):
         self.connect("enter-notify-event", self._on_enter)
         self.connect("leave-notify-event", self._on_leave)
 
-    def _on_enter(self, widget, event):
+    def _on_enter(self, widget: Gtk.Widget, event: Gdk.Event) -> None:
         self._is_hovered = True
 
-    def _on_leave(self, widget, event):
+    def _on_leave(self, widget: Gtk.Widget, event: Gdk.Event) -> None:
         if event.detail == Gdk.NotifyType.INFERIOR:
             return
         self._is_hovered = False
         self.close()
 
-    def open_under(self, parent_widget):
+    def open_under(self, parent_widget: Widget) -> None:
         if self._hide_timer_id is not None:
             GLib.source_remove(self._hide_timer_id)
             self._hide_timer_id = None
@@ -118,7 +118,7 @@ class PopupWidget(EventBox):
         self.connect("enter-notify-event", self._on_hover_enter)
         self.connect("leave-notify-event", self._on_hover_exit)
 
-    def _on_hover_enter(self, widget, event):
+    def _on_hover_enter(self, widget: Gtk.Widget, event: Gdk.Event) -> None:
         if self._close_timer:
             GLib.source_remove(self._close_timer)
             self._close_timer = None
@@ -130,7 +130,7 @@ class PopupWidget(EventBox):
         self.popup.on_before_show()
         self.popup.open_under(self)
 
-    def _on_hover_exit(self, widget, event):
+    def _on_hover_exit(self, widget: Gtk.Widget, event: Gdk.Event) -> None:
         # Prevent flickering when moving mouse from widget into the popup itself
         if event.detail == Gdk.NotifyType.INFERIOR:
             return
@@ -139,7 +139,7 @@ class PopupWidget(EventBox):
         else:
             self.popup.close()
 
-    def _check_should_close(self, event):
+    def _check_should_close(self, event: Gdk.Event) -> bool:
         """
         Close if the mouse is not inside the widget nor inside the popover after the timer
         """

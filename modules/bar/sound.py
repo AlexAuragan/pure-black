@@ -9,7 +9,7 @@ from fabric.widgets.scale import Scale
 from components import Svg
 from components.popup_widget import PopupWidget, PopupWindow
 
-from gi.repository import Gdk
+from gi.repository import Gdk, GObject, Gtk
 
 BASE_ICON_PATH = Path(__file__).parent.parent.parent / "styles" / "pure_black" / "icons" / "pc"
 
@@ -38,12 +38,12 @@ class SoundScale(EventBox):
         self.audio_service.connect("notify::speaker", self._on_speaker_set)
         self.volume_bar.connect("scroll-event", self.on_scroll)
 
-    def _on_speaker_set(self, service, event):
+    def _on_speaker_set(self, service: Audio, event: GObject.ParamSpec) -> None:
         if service.speaker:
             service.speaker.connect("notify::volume", self._on_service_volume_changed)
             self._sync_bar(service.speaker.volume)
 
-    def _on_service_volume_changed(self, speaker, event):
+    def _on_service_volume_changed(self, speaker: AudioStream, event: GObject.ParamSpec) -> None:
         self._sync_bar(speaker.volume)
 
     def _sync_bar(self, volume: float):
@@ -51,7 +51,7 @@ class SoundScale(EventBox):
         self.volume_bar.set_value(volume)
         self._syncing = False
 
-    def _on_bar_changed(self, scale):
+    def _on_bar_changed(self, scale: Scale) -> None:
         if self._syncing:
             return
         if self.audio_service.speaker:
@@ -63,7 +63,7 @@ class SoundScale(EventBox):
         new_vol = self.audio_service.speaker.volume + delta
         self.audio_service.speaker.volume = max(0, min(100, new_vol))
 
-    def on_scroll(self, widget, event):
+    def on_scroll(self, widget: Gtk.Widget, event: Gdk.Event) -> None:
         # The scale gives a smooth direction
         if event.direction == Gdk.ScrollDirection.SMOOTH:
             success, delta_x, delta_y = event.get_scroll_deltas()
@@ -84,7 +84,7 @@ class SoundScale(EventBox):
 
 
 class SoundIcon(Box):
-    def __init__(self, audio_service: Audio, volume=0):
+    def __init__(self, audio_service: Audio, volume: int = 0):
         self.audio_service = audio_service
         self._volume: int = volume
         self.icon = Svg(self.volume_to_path(), size=24)
@@ -96,7 +96,7 @@ class SoundIcon(Box):
             v_align="center",
         )
 
-    def on_volume_change(self, service: AudioStream, event):
+    def on_volume_change(self, service: AudioStream, event: GObject.ParamSpec) -> None:
         self.volume = int(service.volume)
 
     @property
@@ -146,11 +146,11 @@ class Sound(PopupWidget):
         new_vol = self.audio_service.speaker.volume + delta
         self.audio_service.speaker.volume = max(0, min(100, new_vol))
 
-    def on_scroll(self, _, event):
+    def on_scroll(self, _: Gtk.Widget, event: Gdk.Event) -> None:
         self.popup_view.on_scroll(_, event)
 
     @staticmethod
-    def on_button_press(widget, event):
+    def on_button_press(widget: Gtk.Widget, event: Gdk.Event) -> None:
         if event.button == 1:
             widget.on_left_click()
 

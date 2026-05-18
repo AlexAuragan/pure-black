@@ -1,5 +1,5 @@
 import subprocess
-from typing import override
+from typing import Any, override
 
 from fabric import Fabricator
 from fabric.widgets.box import Box
@@ -8,7 +8,7 @@ from fabric.widgets.label import Label
 
 class ClockLabel(Label):
     @override
-    def set_label(self, str) -> None:  # noqa: A002
+    def set_label(self, str: str) -> None:  # noqa: A002
         # Tue Feb  3 12:10:01 AM CET 2026
         wday, month, mday, hour, am, tz, y = str.split()
         h, m, s = hour.split(":")
@@ -27,7 +27,7 @@ class ClockLabel(Label):
 
 
 class ClockWidget(Box):
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Any):
 
         self.label = ClockLabel()
         self.fabricator = (
