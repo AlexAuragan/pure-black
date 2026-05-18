@@ -47,24 +47,28 @@ class NotificationToast(Box):
         children: list[Any] = [header]
 
         if notif["summary"]:
-            children.append(Label(
-                name="toast-summary",
-                label=notif["summary"],
-                h_align="start",
-                h_expand=True,
-                ellipsize="end",
-                all_visible=True,
-            ))
+            children.append(
+                Label(
+                    name="toast-summary",
+                    label=notif["summary"],
+                    h_align="start",
+                    h_expand=True,
+                    ellipsize="end",
+                    all_visible=True,
+                )
+            )
 
         if notif["body"]:
-            children.append(Label(
-                name="toast-body",
-                label=notif["body"],
-                h_align="start",
-                wrap=True,
-                wrap_mode="word-char",
-                all_visible=True,
-            ))
+            children.append(
+                Label(
+                    name="toast-body",
+                    label=notif["body"],
+                    h_align="start",
+                    wrap=True,
+                    wrap_mode="word-char",
+                    all_visible=True,
+                )
+            )
 
         if notif["actions"]:
             children.append(self._build_actions(notif["actions"]))
