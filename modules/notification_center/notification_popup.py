@@ -4,10 +4,12 @@ from typing import Any
 
 from fabric.widgets.box import Box
 from fabric.widgets.button import Button
+from fabric.widgets.image import Image
 from fabric.widgets.label import Label
 from fabric.widgets.revealer import Revealer
+from fabric.widgets.scale import Scale
 from fabric.widgets.wayland import WaylandWindow
-from gi.repository import GLib
+from gi.repository import GdkPixbuf, GLib
 
 from services.notifications import (
     REASON_DISMISSED,
@@ -16,11 +18,41 @@ from services.notifications import (
 )
 
 
+def _pixbuf_from_hints(hints: dict) -> GdkPixbuf.Pixbuf | None:
+    # image-data: (width, height, rowstride, has_alpha, bps, channels, data)
+    raw = hints.get("image-data") or hints.get("image_data")
+    if raw:
+        try:
+            width, height, rowstride, has_alpha, bps, _channels, data = raw
+            return GdkPixbuf.Pixbuf.new_from_bytes(
+                GLib.Bytes.new(bytes(data)),
+                GdkPixbuf.Colorspace.RGB,
+                has_alpha,
+                bps,
+                width,
+                height,
+                rowstride,
+            )
+        except Exception:
+            pass
+
+    path = hints.get("image-path") or hints.get("image_path")
+    if path and isinstance(path, str):
+        try:
+            return GdkPixbuf.Pixbuf.new_from_file_at_scale(path, 48, 48, True)
+        except Exception:
+            pass
+
+    return None
+
+
 class NotificationToast(Box):
     def __init__(self, notif: Notification, service: NotificationService, on_dismissed: callable):
         self._notif = notif
         self._service = service
         self._on_dismissed = on_dismissed
+
+        hints = notif["hints"]
 
         # header: app name + close button
         app_label = Label(
@@ -44,10 +76,10 @@ class NotificationToast(Box):
             children=[app_label, close_btn],
         )
 
-        children: list[Any] = [header]
+        text_children: list[Any] = [header]
 
         if notif["summary"]:
-            children.append(
+            text_children.append(
                 Label(
                     name="toast-summary",
                     label=notif["summary"],
@@ -59,7 +91,7 @@ class NotificationToast(Box):
             )
 
         if notif["body"]:
-            children.append(
+            text_children.append(
                 Label(
                     name="toast-body",
                     label=notif["body"],
@@ -70,8 +102,40 @@ class NotificationToast(Box):
                 )
             )
 
+        # progress bar (value hint 0-100)
+        value = hints.get("value")
+        if value is not None:
+            try:
+                text_children.append(Scale(
+                    name="toast-progress",
+                    min_value=0,
+                    max_value=100,
+                    value=float(value),
+                    orientation="horizontal",
+                    h_expand=True,
+                    all_visible=True,
+                    sensitive=False,
+                ))
+            except Exception:
+                pass
+
         if notif["actions"]:
-            children.append(self._build_actions(notif["actions"]))
+            text_children.append(self._build_actions(notif["actions"]))
+
+        # image — album art or image-path
+        pixbuf = _pixbuf_from_hints(hints)
+        if pixbuf is not None:
+            scaled = pixbuf.scale_simple(48, 48, GdkPixbuf.InterpType.BILINEAR)
+            img = Image(name="toast-image", all_visible=True)
+            img.set_from_pixbuf(scaled)
+            text_col = Box(name="toast-text", orientation="v", spacing=4,
+                           all_visible=True, h_expand=True, children=text_children)
+            children: list[Any] = [
+                Box(name="toast-image-row", orientation="h", spacing=10, all_visible=True,
+                    children=[img, text_col])
+            ]
+        else:
+            children = text_children
 
         self.revealer = Revealer(
             transition_type="slide-down",

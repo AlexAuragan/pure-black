@@ -245,6 +245,33 @@
     background-color: alpha(var(--accent1), 0.25);
 }
 
+#toast-image {
+    border-radius: 6px;
+}
+
+#toast-progress {
+    margin-top: 4px;
+}
+
+#toast-progress trough {
+    min-height: 4px;
+    border-radius: 99px;
+    background-color: alpha(var(--muted), 0.25);
+}
+
+#toast-progress highlight {
+    min-height: 4px;
+    border-radius: 99px;
+    background-color: var(--accent1);
+}
+
+#toast-progress slider {
+    min-width: 0px;
+    min-height: 0px;
+    background-color: transparent;
+    border: none;
+}
+
 /* ── Scrollbar inside the NC ──────────────────────────────────────────── */
 #notif-scroller scrollbar {
     background-color: transparent;

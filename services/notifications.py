@@ -66,6 +66,7 @@ class Notification(TypedDict):
     expire_timeout: int  # ms; -1 = server default, 0 = permanent
     timestamp: float
     is_permanent: bool
+    is_transient: bool  # show toast but don't persist in NC
 
 
 class NotificationService(Service):
@@ -195,7 +196,7 @@ class NotificationService(Service):
                 invocation.return_value(None)
 
             case "GetCapabilities":
-                caps = ["body", "body-markup", "actions", "persistence", "icon-static"]
+                caps = ["body", "body-markup", "actions", "persistence", "icon-static", "icon-multi", "image/svg+xml"]
                 invocation.return_value(GLib.Variant("(as)", (caps,)))
 
             case "GetServerInformation":
@@ -218,6 +219,14 @@ class NotificationService(Service):
                 except Exception:
                     hints_unpacked[k] = str(v)
 
+        # tag-based replacement (x-canonical-private-synchronous)
+        sync_tag = hints_unpacked.get("x-canonical-private-synchronous")
+        if sync_tag and not replaces_id:
+            for existing in list(self._by_id.values()):
+                if existing["hints"].get("x-canonical-private-synchronous") == sync_tag:
+                    replaces_id = existing["id"]
+                    break
+
         # reuse id when replacing
         if replaces_id and replaces_id in self._by_id:
             nid = replaces_id
@@ -232,7 +241,10 @@ class NotificationService(Service):
             nid = self._next_id
             self._next_id += 1
 
+        urgency = hints_unpacked.get("urgency", 1)
         is_permanent = expire_timeout == 0
+        is_transient = bool(hints_unpacked.get("transient", False)) or urgency == 0
+
         notif: Notification = {
             "id": nid,
             "app_name": app_name or "unknown",
@@ -244,16 +256,19 @@ class NotificationService(Service):
             "expire_timeout": expire_timeout,
             "timestamp": time.time(),
             "is_permanent": is_permanent,
+            "is_transient": is_transient,
         }
 
         self._by_id[nid] = notif
-        group = self._groups.setdefault(notif["app_name"], [])
-        group.append(notif)
+
+        if not is_transient:
+            group = self._groups.setdefault(notif["app_name"], [])
+            group.append(notif)
+            self.notification_group_changed(notif["app_name"])
 
         self._schedule_expire(notif)
 
         self.notification_added(nid)
-        self.notification_group_changed(notif["app_name"])
         self.changed()
 
         logger.debug(f"[Notifications] +{nid} from '{app_name}': {summary!r}")
