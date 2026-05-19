@@ -1,0 +1,22 @@
+# Notification filter rules
+# Rules are checked top-to-bottom; first match wins.
+#
+# Match fields (all specified fields must match — AND logic):
+#   match_app     = substring in app_name     (case-insensitive)
+#   match_summary = substring in summary      (case-insensitive)
+#   match_body    = substring in body         (case-insensitive)
+#
+# Actions:
+#   action = "drop"      — silently discard, no toast, no NC entry
+#   action = "transient" — show toast but don't persist in notification center
+
+# Example: drop Instagram's "you have unseen notifications" duplicate
+[[rules]]
+match_app     = "zen"
+match_body    = "You have unseen notification"
+action        = "drop"
+
+# Example: force a specific app's notifications to be transient
+# [[rules]]
+# match_app = "spotify"
+# action    = "transient"

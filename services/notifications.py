@@ -5,6 +5,7 @@ from fabric.core.service import Property, Service, Signal
 from gi.repository import Gio, GLib
 from loguru import logger
 
+from config.notification_filters import NotificationFilters
 from services.hyprland import HyprlandManager
 
 NOTIFICATIONS_BUS_NAME = "org.freedesktop.Notifications"
@@ -94,6 +95,7 @@ class NotificationService(Service):
         # per-notification GLib timeout source ids
         self._expire_sources: dict[int, int] = {}
 
+        self._filters = NotificationFilters()
         self._connection: Gio.DBusConnection | None = None
         try:
             self._iface_node = Gio.DBusNodeInfo.new_for_xml(NOTIFICATIONS_IFACE_XML)
@@ -245,6 +247,7 @@ class NotificationService(Service):
         is_permanent = expire_timeout == 0
         is_transient = bool(hints_unpacked.get("transient", False)) or urgency == 0
 
+        # build a temporary notif for filter matching before committing
         notif: Notification = {
             "id": nid,
             "app_name": app_name or "unknown",
@@ -259,9 +262,17 @@ class NotificationService(Service):
             "is_transient": is_transient,
         }
 
+        # apply filter rules
+        filter_action = self._filters.apply(notif)
+        if filter_action == "drop":
+            logger.debug(f"[Notifications] dropped #{nid} from '{app_name}' by filter rule")
+            return nid
+        if filter_action == "transient":
+            notif["is_transient"] = True
+
         self._by_id[nid] = notif
 
-        if not is_transient:
+        if not notif["is_transient"]:
             group = self._groups.setdefault(notif["app_name"], [])
             group.append(notif)
             self.notification_group_changed(notif["app_name"])
