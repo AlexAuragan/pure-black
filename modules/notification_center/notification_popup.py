@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Callable
 
 from fabric.widgets.box import Box
 from fabric.widgets.button import Button
@@ -47,7 +47,7 @@ def _pixbuf_from_hints(hints: dict) -> GdkPixbuf.Pixbuf | None:
 
 
 class NotificationToast(Box):
-    def __init__(self, notif: Notification, service: NotificationService, on_dismissed: callable):
+    def __init__(self, notif: Notification, service: NotificationService, on_dismissed: Callable[..., Any]):
         self._notif = notif
         self._service = service
         self._on_dismissed = on_dismissed
@@ -106,16 +106,18 @@ class NotificationToast(Box):
         value = hints.get("value")
         if value is not None:
             try:
-                text_children.append(Scale(
-                    name="toast-progress",
-                    min_value=0,
-                    max_value=100,
-                    value=float(value),
-                    orientation="horizontal",
-                    h_expand=True,
-                    all_visible=True,
-                    sensitive=False,
-                ))
+                text_children.append(
+                    Scale(
+                        name="toast-progress",
+                        min_value=0,
+                        max_value=100,
+                        value=float(value),
+                        orientation="horizontal",
+                        h_expand=True,
+                        all_visible=True,
+                        sensitive=False,
+                    )
+                )
             except Exception:
                 pass
 
@@ -128,11 +130,11 @@ class NotificationToast(Box):
             scaled = pixbuf.scale_simple(48, 48, GdkPixbuf.InterpType.BILINEAR)
             img = Image(name="toast-image", all_visible=True)
             img.set_from_pixbuf(scaled)
-            text_col = Box(name="toast-text", orientation="v", spacing=4,
-                           all_visible=True, h_expand=True, children=text_children)
+            text_col = Box(
+                name="toast-text", orientation="v", spacing=4, all_visible=True, h_expand=True, children=text_children
+            )
             children: list[Any] = [
-                Box(name="toast-image-row", orientation="h", spacing=10, all_visible=True,
-                    children=[img, text_col])
+                Box(name="toast-image-row", orientation="h", spacing=10, all_visible=True, children=[img, text_col])
             ]
         else:
             children = text_children
@@ -162,7 +164,7 @@ class NotificationToast(Box):
     def reveal(self) -> None:
         self.revealer.set_reveal_child(True)
 
-    def dismiss(self, then: callable | None = None) -> None:
+    def dismiss(self, then: Callable[[], Any] | None = None) -> None:
         self.revealer.set_reveal_child(False)
         GLib.timeout_add(220, lambda: (then() if then else None) or False)
 
@@ -225,16 +227,24 @@ class NotificationPopup(WaylandWindow):
         if notif is None:
             return
 
+        old = self._toasts.pop(nid, None)
+        if old is not None:
+            self._box.remove(old)
+
         toast = NotificationToast(notif, self._service, on_dismissed=lambda: self._remove_toast(nid))
         self._toasts[nid] = toast
-        self._box.add(toast)
 
-        if not self.get_visible():
-            self.set_visible(True)
-            self.show_all()
-
-        # re-hide the dot so show_all doesn't bleed into the NC bell
-        GLib.idle_add(toast.reveal)
+        if old is not None:
+            toast.revealer.set_reveal_child(True)
+            self._box.add(toast)
+            toast.show_all()
+        else:
+            self._box.add(toast)
+            if not self.get_visible():
+                self.set_visible(True)
+                self.show_all()
+            # re-hide the dot so show_all doesn't bleed into the NC bell
+            GLib.idle_add(toast.reveal)
 
     def _on_closed(self, _svc: NotificationService, nid: int, _reason: int) -> None:
         toast = self._toasts.get(nid)

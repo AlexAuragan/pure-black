@@ -74,7 +74,7 @@ class BrightnessScale(EventBox):
         new_val = self._current_stream.screen_brightness + delta
         self._current_stream.screen_brightness = max(0, min(100, new_val))
 
-    def on_scroll(self, widget: Gtk.Widget, event: Gdk.Event) -> None:
+    def on_scroll(self, widget: Gtk.Widget, event: Gdk.EventScroll) -> None:
         if event.direction == Gdk.ScrollDirection.SMOOTH:
             success, _, delta_y = event.get_scroll_deltas()
             if success:
@@ -151,11 +151,11 @@ class BrightnessWidget(PopupWidget):
         self.brightness_icon.update_stream(match)
         self.popup_view.update_stream(match)
 
-    def on_scroll(self, _: Gtk.Widget, event: Gdk.Event) -> None:
+    def on_scroll(self, _: Gtk.Widget, event: Gdk.EventScroll) -> None:
         self.popup_view.on_scroll(_, event)
 
     @staticmethod
-    def on_button_press(widget: Gtk.Widget, event: Gdk.Event) -> None:
+    def on_button_press(widget: Gtk.Widget, event: Gdk.EventButton) -> None:
         if event.button == 1:
             # TODO Maybe open display settings ?
             subprocess.Popen(["wdisplays"])

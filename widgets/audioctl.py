@@ -26,7 +26,7 @@ class AudioCTL:
         def on_enter(window: WaylandWindow, event: Gdk.Event) -> None:
             self.has_been_entered = True
 
-        def on_key_press(window: WaylandWindow, event: Gdk.Event) -> bool:
+        def on_key_press(window: WaylandWindow, event: Gdk.EventKey) -> bool:
             if event.keyval == Gdk.KEY_Escape:
                 window.destroy()
                 return True

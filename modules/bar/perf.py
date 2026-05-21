@@ -161,7 +161,7 @@ class PerfPopupWindow(WaylandWindow):
             visible=False,
             **kwargs,
         )
-        self.set_pass_through(True)
+        self.pass_through = True
         self.compute_repeater = None
         perf_data.connect("changed", self.on_data_received)
 
@@ -248,17 +248,16 @@ class PerfWidget(PopupWidget):
             self._stop.wait(1)
 
     def on_perf_changed(self, data: dict[str, Any]):
-        self.cpu_widget.set_value(data["cpu"] / 100)
-        self.ram_widget.set_value(data["ram"].percent / 100)
+        self.cpu_widget.value = data["cpu"] / 100
+        self.ram_widget.value = data["ram"].percent / 100
         if (battery := data.get("battery")) is not None:
-            self.battery_widget.set_value(battery.percent / 100)
+            self.battery_widget.value = battery.percent / 100
         if self.popup.get_visible():
             self.popup_view.update_display(data)
 
-    @staticmethod
-    def on_button_press(widget: Gtk.Widget, event: Gdk.Event) -> None:
+    def on_button_press(self, widget: Gtk.Widget, event: Gdk.EventButton) -> None:
         if event.button == 1:
-            widget.on_left_click()
+            self.on_left_click()
 
     @staticmethod
     def on_left_click():

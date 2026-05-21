@@ -1,8 +1,4 @@
-import datetime
-import faulthandler
 import math
-import sys
-import threading
 import time
 from typing import Any
 
@@ -11,17 +7,14 @@ from fabric.widgets.eventbox import EventBox
 from fabric.widgets.image import Image
 from fabric.widgets.label import Label
 from fabric.widgets.overlay import Overlay
+from fabric.widgets.shapes import Corner
 from fabric.widgets.stack import Stack
-
 from gi.repository import Gdk, GLib, GObject, Gtk
 from gi.repository.GdkPixbuf import Pixbuf
 from gi.repository.Gtk import Align
 
 from config.names import WORKSPACE_LABELS
 from services.hyprland import HyprlandManager, Monitor
-
-from fabric.widgets.shapes import Corner
-
 from services.watchdog import watchdog
 
 
@@ -235,7 +228,7 @@ class HyprlandWorkspaceIcon(EventBox):
     def on_left_click(self, *_):
         self.hyprland.focus_workspace_current_monitor(self.id)
 
-    def on_hover_exit(self, widget: Gtk.Widget, event: Gdk.Event) -> None:
+    def on_hover_exit(self, widget: Gtk.Widget, event: Gdk.EventCrossing) -> None:
         if event.detail == Gdk.NotifyType.INFERIOR:
             # Ignore leaving into a child widget
             return

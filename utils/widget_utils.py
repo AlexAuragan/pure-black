@@ -23,4 +23,4 @@ def position_under(widget: Widget, popup: WaylandWindow, gap: int = 4) -> None:
 
     # ensure popup has a size (needs to be realized/shown at least once)
     left = max(0, widget_center_x - (popup_w // 2))
-    popup.set_margin(f"{gap}px 0px 0px {left}px")
+    popup.margin = f"{gap}px 0px 0px {left}px"

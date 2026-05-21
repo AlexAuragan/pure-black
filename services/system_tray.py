@@ -213,7 +213,7 @@ class SystemTrayItem(Service):
                 try:
                     pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_scale(str(path), target_size, target_size, True)
                     return self._maybe_monochrome(pixbuf, monochrome, monochrome_tint)
-                except GLib.GError:
+                except Exception:
                     return None
 
         # 3) GTK icon theme (respects the item's own IconThemePath)
@@ -233,7 +233,7 @@ class SystemTrayItem(Service):
                         monochrome,
                         monochrome_tint,
                     )
-            except GLib.GError:
+            except Exception:
                 pass
 
         # 4) XDG filesystem resolver — handles nordvpn-style names, pixmaps dirs, etc.
@@ -245,7 +245,7 @@ class SystemTrayItem(Service):
                     try:
                         pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_scale(resolved, target_size, target_size, True)
                         return self._maybe_monochrome(pixbuf, monochrome, monochrome_tint)
-                    except GLib.GError:
+                    except Exception:
                         pass
 
         # 5) Last resort: match via desktop-entry using the item's title
@@ -258,7 +258,7 @@ class SystemTrayItem(Service):
                 try:
                     pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_scale(resolved, target_size, target_size, True)
                     return self._maybe_monochrome(pixbuf, monochrome, monochrome_tint)
-                except GLib.GError:
+                except Exception:
                     pass
 
         logger.warning(
@@ -460,25 +460,28 @@ class SystemTrayItem(Service):
             return menu.popup_at_pointer(event)
         try:
             return self.context_menu_for_event(event)
-        except GError:
+        except Exception:
             return None
 
     def scroll(self, delta: int, orientation: Literal["vertical", "horizontal"]) -> None:
         return self._proxy.Scroll("(is)", delta, orientation)
 
     # event methods
-    def context_menu_for_event(self, event: Gdk.EventAny) -> None:
-        return self.context_menu(*event.get_root_coords())
+    def context_menu_for_event(self, event: Gdk.Event) -> None:
+        _, x, y = event.get_root_coords()
+        return self.context_menu(int(x), int(y))
 
-    def activate_for_event(self, event: Gdk.EventAny) -> None:
-        return self.activate(*event.get_root_coords())
+    def activate_for_event(self, event: Gdk.Event) -> None:
+        _, x, y = event.get_root_coords()
+        return self.activate(int(x), int(y))
 
-    def secondary_activate_for_event(self, event: Gdk.EventAny) -> None:
-        return self.secondary_activate(*event.get_root_coords())
+    def secondary_activate_for_event(self, event: Gdk.Event) -> None:
+        _, x, y = event.get_root_coords()
+        return self.secondary_activate(int(x), int(y))
 
     def scroll_for_event(self, event: Gdk.EventScroll) -> None:
         direction = "vertical" if event.direction == 0 or event.direction == 1 else "horizontal"
-        delta: int = event.delta_y if direction == "vertical" else event.delta_x
+        delta = int(event.delta_y if direction == "vertical" else event.delta_x)
         return self.scroll(delta, direction)
 
     # privates

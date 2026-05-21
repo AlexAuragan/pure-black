@@ -289,8 +289,8 @@ def _fmt_day(day: dict[str, Any], temp_unit: str) -> str:
 class WeatherWidget(PopupWidget):
     def __init__(self, weather: WeatherService, **kwargs: Any):
         self.weather = weather
-        view = WeatherPopupView(self.weather)
-        self.popup = PopupWindow(view, on_before_show=view.on_before_show)
+        self.popup_view = WeatherPopupView(self.weather)
+        self.popup = PopupWindow(self.popup_view, on_before_show=self.popup_view.on_before_show)
 
         self.icon = WeatherIcon("cloud")
         self.temp = Label(name="weather-temp", label="--°")
@@ -318,12 +318,11 @@ class WeatherWidget(PopupWidget):
             raise
 
         if self.popup.get_visible():
-            self.popup.view.update(data)
+            self.popup_view.update(data)
 
-    @staticmethod
-    def on_button_press(widget: Gtk.Widget, event: Gdk.Event) -> None:
+    def on_button_press(self, widget: Gtk.Widget, event: Gdk.EventButton) -> None:
         if event.button == 1:
-            widget.on_left_click()
+            self.on_left_click()
 
     def on_left_click(self):
         q = quote_plus(f"meteo {self.weather.city}")

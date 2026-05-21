@@ -68,7 +68,9 @@ class NotificationFilters:
         except Exception as e:
             logger.warning(f"[NotificationFilters] could not watch config file: {e}")
 
-    def _on_file_changed(self, _monitor, _file, _other, event) -> None:
+    def _on_file_changed(
+        self, _monitor: Gio.FileMonitor, _file: Gio.File, _other: Gio.File | None, event: Gio.FileMonitorEvent
+    ) -> None:
         if event in (
             Gio.FileMonitorEvent.CHANGES_DONE_HINT,
             Gio.FileMonitorEvent.CREATED,

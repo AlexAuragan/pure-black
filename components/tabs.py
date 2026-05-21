@@ -181,7 +181,7 @@ class Tabs(EventBox):
         Handle Tab / Shift+Tab to move across tabs.
         Optionally handle Enter/Space to activate the focused tab again.
         """
-        keyval = event.keyval
+        keyval = event.keyval  
         if keyval == Gdk.KEY_Tab:
             self._focus_next_tab()
         elif keyval == Gdk.KEY_ISO_Left_Tab:

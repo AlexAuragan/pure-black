@@ -49,8 +49,13 @@ def _gdk_index_for_hyprland_monitor(hypr_manager: HyprlandManager, monitor_id: i
     if mon is not None:
         target_x, target_y = mon["x"], mon["y"]
         display = Gdk.Display.get_default()
+        if display is None:
+            return 0
         for i in range(display.get_n_monitors()):
-            geo = display.get_monitor(i).get_geometry()
+            monitor = display.get_monitor(i)
+            if monitor is None:
+                continue
+            geo = monitor.get_geometry()
             if geo.x == target_x and geo.y == target_y:
                 return i
     return 0
@@ -118,7 +123,7 @@ class StatusBar(Window):
             name="bar-left-box",
             children=[
                 self.active_window,
-                Box(children=[self.sound, self.brightness], spacing=4),
+                Box(children=[w for w in [self.sound, self.brightness] if w is not None], spacing=4),
             ],
             spacing=10,
         )
@@ -164,7 +169,7 @@ if __name__ == "__main__":
             notif_service=shared_notif,
         )
 
-    _rebuild_pending = [None]  # holds the GLib source id for the debounce timer
+    _rebuild_pending: list[int | None] = [None]  # holds the GLib source id for the debounce timer
 
     def rebuild_bars(*_):
         if _rebuild_pending[0] is not None:

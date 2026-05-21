@@ -10,13 +10,7 @@
 #   action = "drop"      — silently discard, no toast, no NC entry
 #   action = "transient" — show toast but don't persist in notification center
 
-# Example: drop Instagram's "you have unseen notifications" duplicate
 [[rules]]
 match_app     = "zen"
 match_body    = "You have unseen notification"
 action        = "drop"
-
-# Example: force a specific app's notifications to be transient
-# [[rules]]
-# match_app = "spotify"
-# action    = "transient"

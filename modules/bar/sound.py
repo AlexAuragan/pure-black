@@ -63,7 +63,7 @@ class SoundScale(EventBox):
         new_vol = self.audio_service.speaker.volume + delta
         self.audio_service.speaker.volume = max(0, min(100, new_vol))
 
-    def on_scroll(self, widget: Gtk.Widget, event: Gdk.Event) -> None:
+    def on_scroll(self, widget: Gtk.Widget, event: Gdk.EventScroll) -> None:
         # The scale gives a smooth direction
         if event.direction == Gdk.ScrollDirection.SMOOTH:
             success, delta_x, delta_y = event.get_scroll_deltas()
@@ -146,13 +146,12 @@ class Sound(PopupWidget):
         new_vol = self.audio_service.speaker.volume + delta
         self.audio_service.speaker.volume = max(0, min(100, new_vol))
 
-    def on_scroll(self, _: Gtk.Widget, event: Gdk.Event) -> None:
+    def on_scroll(self, _: Gtk.Widget, event: Gdk.EventScroll) -> None:
         self.popup_view.on_scroll(_, event)
 
-    @staticmethod
-    def on_button_press(widget: Gtk.Widget, event: Gdk.Event) -> None:
+    def on_button_press(self, widget: Gtk.Widget, event: Gdk.EventButton) -> None:
         if event.button == 1:
-            widget.on_left_click()
+            self.on_left_click()
 
     def on_left_click(self):
         subprocess.Popen(["pavucontrol"])

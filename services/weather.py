@@ -116,9 +116,9 @@ class WeatherService(Service[Any]):
     def data(self) -> WeatherServiceData:
         return self._data
 
-    def bind(self, callback: Callable[[WeatherServiceData], None]) -> None:
-        self._callbacks.append(callback)
-        callback(self.data)
+    def bind(self, func: Callable[[WeatherServiceData], None]) -> None:
+        self._callbacks.append(func)
+        func(self.data)
 
     def _notify(self) -> None:
         for cb in self._callbacks:

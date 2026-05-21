@@ -36,7 +36,8 @@ class SystemTrayItem(Button):
         self.do_update_properties()
 
     def _on_destroy(self, *_):
-        self._item.disconnect(self._changed_id)
+        if self._changed_id is not None:
+            self._item.disconnect(self._changed_id)
         self._changed_id = None
 
     def do_update_properties(self, *_):

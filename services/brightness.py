@@ -566,7 +566,7 @@ class Brightness(Service[Any, Any]):
             logger.warning(f"Brightness scan failed: {result}")
             if self._scan_requested:
                 self._schedule_scan()
-            return False
+            return
 
         new_screens: list[BrightnessStream] = []
         existing_streams = {}
@@ -615,5 +615,3 @@ class Brightness(Service[Any, Any]):
 
         if self._scan_requested:
             self._schedule_scan()
-
-        return False

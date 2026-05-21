@@ -8,7 +8,7 @@ from fabric.widgets.eventbox import EventBox
 from fabric.widgets.image import Image
 from fabric.widgets.svg import Svg
 
-from gi.overrides import Gio
+from gi.repository import Gio
 from gi.repository.GObject import ParamSpecBoxed
 from gi.repository import Cvc
 
@@ -90,10 +90,9 @@ class MediaPlayer(PopupWidget):
         self.audio_service.connect("notify::applications", self.popup_window.on_applications_set)
         self.connect("button-press-event", self.on_button_press)
 
-    @staticmethod
-    def on_button_press(widget: Gtk.Widget, event: Gdk.Event) -> None:
+    def on_button_press(self, widget: Gtk.Widget, event: Gdk.EventButton) -> None:
         if event.button == 1:
-            widget.on_left_click()
+            self.on_left_click()
 
     def on_left_click(self):
         pass
