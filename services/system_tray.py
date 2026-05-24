@@ -523,7 +523,8 @@ class SystemTrayItem(Service):
             GLib.Variant("(s)", [self._proxy.get_interface_name()]),
             GLib.VariantType("(a{sv})"),
             Gio.DBusCallFlags.NONE,
-            -1,  # no timeout
+            # -1,  # no timeout
+            5000, # 5s timeout
             None,
             self.do_cache_proxy_properties_finish,
         )

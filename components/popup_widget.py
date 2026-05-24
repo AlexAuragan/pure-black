@@ -80,6 +80,7 @@ class PopupWindow(WaylandWindow):
             if not self.get_visible():
                 self.set_visible(True)
                 self.show_all()
+            self.pass_through = False
             self.revealer.reveal()
         else:
             self.set_visible(True)
@@ -96,7 +97,13 @@ class PopupWindow(WaylandWindow):
             self._hide_window()
 
     def _hide_window(self):
-        self.set_visible(False)
+        if self.use_revealer:
+            # Avoid set_visible(False): re-mapping the Wayland surface requires a compositor
+            # configure roundtrip that can deadlock the GTK main thread for ~9s if Hyprland
+            # is briefly busy. Keep the surface mapped; pass_through blocks input instead.
+            self.pass_through = True
+        else:
+            self.set_visible(False)
         self._hide_timer_id = None
         return False
 
