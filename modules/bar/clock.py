@@ -35,7 +35,7 @@ class ClockWidget(Box):
                 interval=500,
                 poll_from="date",
                 on_changed=lambda f, v: self.label.set_label(v),
-            ),
+            )
         )
 
         super().__init__(name="clock-widget", orientation="h", spacing=6, children=[self.label])
