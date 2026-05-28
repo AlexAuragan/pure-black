@@ -139,7 +139,7 @@ def _resolve_icon_path(icon_name_or_path: str) -> str | None:
                     cand = theme / "scalable" / "apps" / f"{icon}{ext}"
                     if cand.is_file():
                         return str(cand)
-                for size in (16, 22, 24, 32, 48, 64, 96, 128, 256):
+                for size in (16, 22, 24, 32, 48, 64, 96, 128, 256, 512):
                     for ext in exts:
                         cand = theme / f"{size}x{size}" / "apps" / f"{icon}{ext}"
                         if cand.is_file():

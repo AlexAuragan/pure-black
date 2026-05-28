@@ -285,6 +285,8 @@ class SystemTrayItem(Service):
             tail = parts[-1].lower()
             if tail not in candidates:
                 candidates.append(tail)
+        if not candidates:
+            logger.warning(f"No icon found for app '{icon_name}'")
         return candidates
 
     def _scale(
