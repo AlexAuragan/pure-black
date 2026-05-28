@@ -119,13 +119,13 @@ class BrightnessIcon(Box):
 
 
 class BrightnessWidget(PopupWidget):
-    def __init__(self, brightness_service: Brightness, screen_id: int = 0):
+    def __init__(self, brightness_service: Brightness, screen_id: int = 0, monitor: int = 0):
         self.brightness_service = brightness_service
         self.screen_id = screen_id
 
         self.brightness_icon = BrightnessIcon(self.brightness_service, self.screen_id)
         self.popup_view = BrightnessScale(self.brightness_service, self.screen_id)
-        self.popup_window = PopupWindow(self.popup_view)
+        self.popup_window = PopupWindow(self.popup_view, monitor=monitor)
 
         super().__init__(
             name="brightness-widget",

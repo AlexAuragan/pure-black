@@ -287,10 +287,10 @@ def _fmt_day(day: dict[str, Any], temp_unit: str) -> str:
 
 
 class WeatherWidget(PopupWidget):
-    def __init__(self, weather: WeatherService, **kwargs: Any):
+    def __init__(self, weather: WeatherService, monitor: int = 0, **kwargs: Any):
         self.weather = weather
         self.popup_view = WeatherPopupView(self.weather)
-        self.popup = PopupWindow(self.popup_view, on_before_show=self.popup_view.on_before_show)
+        self.popup = PopupWindow(self.popup_view, on_before_show=self.popup_view.on_before_show, monitor=monitor)
 
         self.icon = WeatherIcon("cloud")
         self.temp = Label(name="weather-temp", label="--°")

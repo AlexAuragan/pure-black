@@ -330,7 +330,7 @@ class NotificationBell(Box):
 class NotificationCenter(EventBox):
     """Bar widget: click to toggle the notification panel."""
 
-    def __init__(self, service: NotificationService, **kwargs: Any):
+    def __init__(self, service: NotificationService, monitor: int = 0, **kwargs: Any):
         self._service = service
         self._is_open = False
 
@@ -339,6 +339,7 @@ class NotificationCenter(EventBox):
             self._view,
             transition_type="slide-down",
             transition_duration=200,
+            monitor=monitor,
         )
 
         self._bell = NotificationBell(service)

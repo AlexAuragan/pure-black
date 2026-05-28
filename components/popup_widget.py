@@ -58,14 +58,25 @@ class PopupWindow(WaylandWindow):
         self.on_before_show = on_before_show or (lambda *args: None)
         self.view = child_view
         self._is_hovered = False
+        self._parent_widget: Widget | None = None
         self.connect("enter-notify-event", self._on_enter)
         self.connect("leave-notify-event", self._on_leave)
+
+        GLib.idle_add(self._pre_realize)
+
+    def _pre_realize(self) -> bool:
+        if self._parent_widget is not None:
+            position_under(self._parent_widget, self)
+        self.set_visible(True)
+        self.show_all()
+        self._hide_window()
+        return False
 
     def _on_enter(self, widget: Gtk.Widget, event: Gdk.Event) -> None:
         self._is_hovered = True
 
     def _on_leave(self, widget: Gtk.Widget, event: Gdk.Event) -> None:
-        if event.detail == Gdk.NotifyType.INFERIOR:  
+        if event.detail == Gdk.NotifyType.INFERIOR:
             return
         self._is_hovered = False
         self.close()
@@ -99,10 +110,7 @@ class PopupWindow(WaylandWindow):
 
     def _hide_window(self):
         if self.use_revealer:
-            # Avoid set_visible(False): re-mapping the Wayland surface requires a compositor
-            # configure roundtrip that can deadlock the GTK main thread for ~9s if Hyprland
-            # is briefly busy. Keep the surface mapped; pass_through blocks input and
-            # opacity=0 hides the residual bar that would otherwise remain visible.
+
             self.pass_through = True
             self.set_opacity(0)
         else:
@@ -121,6 +129,7 @@ class PopupWidget(EventBox):
     ):
         super().__init__(child=main_widget, **kwargs)
         self.popup = popup_window
+        self.popup._parent_widget = self
         self.interactive = interactive
         self._close_timer = None
 
@@ -142,7 +151,7 @@ class PopupWidget(EventBox):
 
     def _on_hover_exit(self, widget: Gtk.Widget, event: Gdk.Event) -> None:
         # Prevent flickering when moving mouse from widget into the popup itself
-        if event.detail == Gdk.NotifyType.INFERIOR: 
+        if event.detail == Gdk.NotifyType.INFERIOR:
             return
         if self.interactive:
             self._close_timer = GLib.timeout_add(100, lambda: self._check_should_close(event))

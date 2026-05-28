@@ -121,11 +121,11 @@ class SoundIcon(Box):
 
 
 class Sound(PopupWidget):
-    def __init__(self, audio_service: Audio):
+    def __init__(self, audio_service: Audio, monitor: int = 0):
         self.audio_service = audio_service
         self.sound_icon = SoundIcon(self.audio_service)
         self.popup_view = SoundScale(self.audio_service)
-        self.popup_window = PopupWindow(self.popup_view)
+        self.popup_window = PopupWindow(self.popup_view, monitor=monitor)
         super().__init__(
             name="media-player",
             main_widget=self.sound_icon,

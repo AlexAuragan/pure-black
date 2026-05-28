@@ -181,7 +181,7 @@ class PerfPopupWindow(WaylandWindow):
 
 
 class PerfWidget(PopupWidget):
-    def __init__(self):
+    def __init__(self, monitor: int = 0):
         base = PROJECT_DIR + "/styles/pure_black/icons/pc/"
         cpu_icon = Svg(base + "cpu.svg", icon_size=12)
         cpu_icon.set_name("perf_icon")
@@ -211,7 +211,7 @@ class PerfWidget(PopupWidget):
         )
 
         self.popup_view = PerfPopupView()
-        self.popup = PopupWindow(self.popup_view)
+        self.popup = PopupWindow(self.popup_view, monitor=monitor)
 
         children = [self.cpu_widget, self.ram_widget]
 

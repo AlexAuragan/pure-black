@@ -103,21 +103,21 @@ class StatusBar(Window):
         self.clock = ClockWidget()
 
         _weather = weather_service or WeatherService(city="Paris", fetch_interval_minutes=10, use_uscs=False)
-        self.weather_widget = WeatherWidget(_weather)
+        self.weather_widget = WeatherWidget(_weather, monitor=gdk_index)
 
         # self.active_window = ActiveWindowWidget(HyprlandManager())
-        self.perf_widget = PerfWidget()
+        self.perf_widget = PerfWidget(monitor=gdk_index)
 
         self.system_status = Box(name="system-status", spacing=4, orientation="h", children=[])
         self.active_window = ActiveWindowWidget(self.hyprland, monitor_id)
         self.workspaces = HyprlandWorkspacesTray(self.hyprland, two_rows=False, monitor_id=monitor_id)
         self.systray = SystemTray()
         _notif = notif_service or NotificationService(hyprland=self.hyprland)
-        self.notif_center = NotificationCenter(_notif)
-        self.sound = Sound(self.audio) if self.audio is not None else None
+        self.notif_center = NotificationCenter(_notif, monitor=gdk_index)
+        self.sound = Sound(self.audio, monitor=gdk_index) if self.audio is not None else None
         # self.media_player = MediaPlayer(self.audio)
         _brightness = brightness_service or Brightness(self.hyprland)
-        self.brightness = BrightnessWidget(_brightness, monitor_id)
+        self.brightness = BrightnessWidget(_brightness, monitor_id, monitor=gdk_index)
 
         self.left_box = Box(
             name="bar-left-box",
