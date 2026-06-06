@@ -8,14 +8,10 @@ from fabric.widgets.label import Label
 from fabric.widgets.scale import Scale
 
 from fabric.audio.service import AudioStream
-from gi.repository import GObject
 
 
 class StreamRow(Box):
-    """
-    One row:
-      [name/desc]  [mute]  [scale]
-    """
+    """One row: [name (fixed 220px)] [━━━━●━━━━ scale] [Mute]"""
 
     def __init__(self, stream: AudioStream, *, show_app_id: bool = False):
         self.stream = stream
@@ -25,13 +21,25 @@ class StreamRow(Box):
         if show_app_id and stream.application_id:
             title = f"{title}  —  {stream.application_id}"
 
-        self.label = Label(label=title, name="stream-label", all_visible=True, h_expand=True)
-
-        self.mute_btn = Button(
-            label="Mute" if not stream.muted else "Unmute",
-            name="stream-mute",
+        self.label = Label(
+            label=title,
+            name="stream-label",
             all_visible=True,
-            on_clicked=self._on_toggle_mute,
+            ellipsization="end",
+            justification="left",
+            max_chars_width=30,
+            h_expand=True,
+            v_align="center",
+            h_align="start",
+        )
+
+        self.label_box = Box(
+            name="stream-label-box",
+            all_visible=True,
+            h_expand=False,
+            v_align="center",
+            size=(220, -1),
+            children=[self.label],
         )
 
         self.scale = Scale(
@@ -42,6 +50,33 @@ class StreamRow(Box):
             orientation="horizontal",
             all_visible=True,
             h_expand=True,
+            v_align="center",
+        )
+
+        self.scale_box = Box(
+            name="stream-scale-box",
+            all_visible=True,
+            h_expand=True,
+            v_align="center",
+            children=[self.scale],
+        )
+
+        self.mute_btn = Button(
+            label="Unmute" if stream.muted else "Mute",
+            name="stream-mute",
+            all_visible=True,
+            on_clicked=self._on_toggle_mute,
+            v_align="center",
+            h_align="center",
+        )
+
+        self.mute_box = Box(
+            name="stream-mute-box",
+            all_visible=True,
+            h_expand=False,
+            v_align="center",
+            size=(80, -1),
+            children=[self.mute_btn],
         )
 
         super().__init__(
@@ -49,44 +84,30 @@ class StreamRow(Box):
             orientation="horizontal",
             spacing=12,
             all_visible=True,
-            children=[self.label, self.mute_btn, self.scale],
+            children=[self.label_box, self.scale_box, self.mute_box],
         )
 
-        # Hook events
+        # Scale → audio service
         self.scale.connect("value-changed", self._on_scale_changed)
-        self.stream.connect("notify::volume", self._on_stream_volume_changed)
-        self.stream.connect("notify::is-muted", self._on_stream_mute_changed)
 
-        # Initial sync
-        self._set_scale(stream.volume)
-        self._set_mute_label(stream.muted)
+        # Audio service → UI (covers volume, mute, and any external change)
+        self.stream.connect("changed", self._on_stream_changed)
 
-    def _set_scale(self, vol: float) -> None:
+        self._sync_from_stream()
+
+    def _sync_from_stream(self) -> None:
         self._syncing = True
-        self.scale.set_value(float(vol))
+        self.scale.set_value(float(self.stream.volume))
+        self.mute_btn.set_label("Unmute" if self.stream.muted else "Mute")
         self._syncing = False
 
-    def _set_mute_label(self, muted: bool) -> None:
-        # (Button has set_label in GTK; Fabric Button usually exposes it too.)
-        label = "Unmute" if muted else "Mute"
-        self.mute_btn.set_label(label)  # type: ignore[attr-defined]
-
-    def _on_stream_volume_changed(self, _stream: AudioStream, _pspec: GObject.ParamSpec) -> None:
-        self._set_scale(self.stream.volume)
-
-    def _on_stream_mute_changed(self, _stream: AudioStream, _pspec: GObject.ParamSpec) -> None:
-        self._set_mute_label(self.stream.muted)
+    def _on_stream_changed(self, *_: Any) -> None:
+        self._sync_from_stream()
 
     def _on_scale_changed(self, _scale: Scale) -> None:
         if self._syncing:
             return
-        # Clamp and set
-        v = float(self.scale.value)
-        if v < 0:
-            v = 0
-        elif v > 100:
-            v = 100
-        self.stream.volume = v
+        self.stream.volume = max(0.0, min(100.0, float(self.scale.value)))
 
-    def _on_toggle_mute(self, _btn: Button, *_args: Any) -> None:
+    def _on_toggle_mute(self, _btn: Button, *_: Any) -> None:
         self.stream.muted = not self.stream.muted

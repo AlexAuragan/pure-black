@@ -1,167 +1,153 @@
 /* Root */
-#audioctl-root { background: transparent; }
+#audioctl-root {
+    background: transparent;
+}
 
-/* Frame */
+/* ---------- FRAME ---------- */
 #audioctl-root #tabs-content-bg {
-  background: var(--window-bg);
-  border: 1px solid var(--border-color);
-  border-radius: 12px;
+    background: var(--window-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 16px;
 }
 
 /* Make tabs sit onto the frame border */
 #audioctl-root .tabs-bar {
-  margin-bottom: -1px; /* overlap frame top border by 1px */
+    margin-bottom: -1px;
 }
 
 /* Button itself should not paint a different bg */
-#audioctl-root .folder-tab .tab-button-core { background: transparent; }
+#audioctl-root .folder-tab .tab-button-core {
+    background: transparent;
+}
 
 /* ---------- INACTIVE TABS ---------- */
 #audioctl-root .folder-tab #tab-core,
 #audioctl-root .folder-tab .tab-corner {
-  background: var(--overlay);
+    background: var(--overlay);
 }
 
 #audioctl-root .folder-tab #tab-core {
-  padding: 6px 12px;
-  border-top-left-radius: 10px;
-  border-top-right-radius: 10px;
-  border: 1px solid transparent; /* no outline */
+    padding: 6px 14px;
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+    border: 1px solid transparent;
+    font-size: 14px;
+    color: var(--muted);
+}
+
+#audioctl-root .folder-tab #tab-core:hover {
+    color: var(--text-weak);
+    background: alpha(var(--border), 0.06);
 }
 
 /* ---------- ACTIVE TAB ---------- */
 #audioctl-root .folder-tab.active #tab-core,
 #audioctl-root .folder-tab.active .tab-corner {
-  background: var(--window-bg);
+    background: var(--window-bg);
 }
 
-/* Nudge the active tab down 1px so there is NO gap line to the frame */
-#audioctl-root .folder-tab.active {
-  margin-bottom: -1px;
-}
-
-/* Core: only top border here; left/right handled by corners + core outer edge */
 #audioctl-root .folder-tab.active #tab-core {
-  border-top: 1px solid var(--border-color);
-
-  /* kill seams with corners */
-  border-left: 1px solid var(--window-bg);
-  border-right: 1px solid var(--window-bg);
-
-  /* IMPORTANT: don't draw a bottom border; let it merge with frame */
-  border-bottom: 0px;
+    color: var(--text);
+    font-size: 14px;
 }
 
-/* Left corner: draw the OUTER border (top + left). Inner edge to core is window-bg */
+#audioctl-root .folder-tab.active {
+    margin-bottom: -1px;
+}
+
+#audioctl-root .folder-tab.active #tab-core {
+    border-top: 1px solid var(--border-color);
+    border-left: 1px solid var(--window-bg);
+    border-right: 1px solid var(--window-bg);
+    border-bottom: 0px;
+}
+
+/* Left corner: outer border (top + left), inner edge merges with core */
 #audioctl-root .folder-tab.active .tab-left-corner {
-  border-top: 1px solid var(--border-color);
-  border-left: 1px solid var(--border-color);
-
-  /* seam to core */
-  border-right: 1px solid var(--window-bg);
-
-  /* no bottom border to avoid the line above the frame */
-  border-bottom: 0px;
+    border-top: 1px solid var(--border-color);
+    border-left: 1px solid var(--border-color);
+    border-right: 1px solid var(--window-bg);
+    border-bottom: 0px;
 }
 
-/* Right corner: draw OUTER border (top + right). Inner edge to core is window-bg */
+/* Right corner: outer border (top + right), inner edge merges with core */
 #audioctl-root .folder-tab.active .tab-right-corner {
-  border-top: 1px solid var(--border-color);
-  border-right: 1px solid var(--border-color);
-
-  /* seam to core */
-  border-left: 1px solid var(--window-bg);
-
-  /* no bottom border to avoid the line above the frame */
-  border-bottom: 0px;
+    border-top: 1px solid var(--border-color);
+    border-right: 1px solid var(--border-color);
+    border-left: 1px solid var(--window-bg);
+    border-bottom: 0px;
 }
 
-
-/*
-#tabs-root {
+/* ---------- PAGE TITLE ---------- */
+#page-title {
+    font-size: 11px;
+    color: var(--muted);
+    margin-bottom: 4px;
+    margin-left: 2px;
 }
 
-#folder-tab {
-  margin: 0px 6px 0px 0px;
-}
-
-#folder-tab.active {
-  margin-bottom: -1px;
-}
-
-#folder-tab.active .tab-core {
-  background: rgba(255, 255, 255, 0.10);
-
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  border-bottom: 0px;
-}
-
-#tab-button-core {
-  padding: 0px;
-  background: transparent;
-  border: 0px;
-}
-
-#folder-tab:not(.active) .tab-core:hover {
-  background: rgba(255, 255, 255, 0.09);
-  border-color: rgba(255, 255, 255, 0.16);
-}
-
-
-#tab-corner {
-  background: rgba(255, 255, 255, 0.06);
-}
-
-#folder-tab.active .tab-corner {
-  background: rgba(255, 255, 255, 0.10);
-}
-#top-corner {
-  background: rgba(255, 255, 255, 0.10);
-}
-
-#tabs-content-frame {
-  padding: 0px 10px 10px 10px;
-}
-
-#content-background {
-  padding: 12px;
-  border-bottom-left-radius: 12px;
-  border-bottom-right-radius: 12px;
-
-  background: rgba(255, 255, 255, 0.10);
-  border: 1px solid rgba(255, 255, 255, 0.16);
-
-  border-top-left-radius: 0px;
-  border-top-right-radius: 0px;
-}
-
-#tabs-content-frame .content-background {
-  border-top: 1px solid rgba(255, 255, 255, 0.16);
-}
-
-#tabs-stack {
-}
-
-
+/* ---------- STREAM ROWS ---------- */
 #stream-row {
-  padding: 8px 10px;
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.05);
+    min-height: 48px;
+    padding: 0px 14px;
+    border-radius: 10px;
+    background: alpha(var(--border), 0.04);
+    border: 1px solid alpha(var(--border), 0.08);
 }
 
 #stream-label {
-  opacity: 0.95;
+    font-size: 14px;
+    color: var(--text);
+}
+
+/* ---------- MUTE BUTTON ---------- */
+#stream-mute-box {
+    min-width: 80px;
 }
 
 #stream-mute {
-  padding: 4px 10px;
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.10);
+    padding: 4px 12px;
+    border-radius: 8px;
+    background: alpha(var(--border), 0.08);
+    border: 1px solid alpha(var(--border), 0.14);
+    font-size: 13px;
+    color: var(--text-weak);
 }
 
 #stream-mute:hover {
-  background: rgba(255, 255, 255, 0.09);
-  border-color: rgba(255, 255, 255, 0.16);
+    background: alpha(var(--border), 0.14);
+    border-color: alpha(var(--border), 0.24);
+    color: var(--text);
 }
-*/
+
+/* ---------- VOLUME BAR (horizontal Scale) ---------- */
+#stream-scale {
+    padding: 0px 4px;
+}
+
+#stream-scale trough {
+    border-radius: 99px;
+    min-height: 6px;
+    background: alpha(var(--border), 0.12);
+    border: none;
+}
+
+#stream-scale highlight {
+    border-radius: 99px;
+    min-height: 6px;
+    background: var(--accent1);
+}
+
+#stream-scale slider {
+    background: var(--text);
+    border-radius: 50%;
+    min-width: 14px;
+    min-height: 14px;
+    margin: -4px;
+    border: 2px solid var(--background);
+}
+
+#stream-scale slider:hover {
+    background: var(--white5);
+}
