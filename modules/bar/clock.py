@@ -1,58 +1,24 @@
-import subprocess
-from typing import Any, override
+import datetime
+from typing import Any
 
-from fabric import Fabricator
 from fabric.widgets.box import Box
 from fabric.widgets.label import Label
-
-
-class ClockLabel(Label):
-    @override
-    def set_label(self, str: str) -> None:  # noqa: A002
-        # Tue Feb  3 12:10:01 AM CET 2026
-        wday, month, mday, hour, am, tz, y = str.split()
-        h, m, s = hour.split(":")
-        h, m, s = int(h), int(m), int(s)
-        ampm = am.lower()
-        if ampm == "am":
-            if h == 12:
-                h = 0
-        elif ampm == "pm":
-            if h != 12:
-                h += 12
-        s = f"{s}" if s >= 10 else f"0{s}"
-        m = f"{m}" if m >= 10 else f"0{m}"
-        h = f"{h}" if h >= 10 else f"0{h}"
-        super().set_label(f"{h}:{m}:{s}")
+from gi.repository import GLib
 
 
 class ClockWidget(Box):
     def __init__(self, **kwargs: Any):
-
-        self.label = ClockLabel()
-        self.fabricator = (
-            Fabricator(
-                interval=500,
-                poll_from="date",
-                on_changed=lambda f, v: self.label.set_label(v),
-            )
-        )
-
+        self.label = Label()
         super().__init__(name="clock-widget", orientation="h", spacing=6, children=[self.label])
-
-        self.build(lambda x: self.fabricator)
+        self._tick()
+        GLib.timeout_add(500, self._tick)
         self.set_has_tooltip(True)
-        self.set_tooltip_markup(self._tooltip_markup())
 
-    def _tooltip_markup(
-        self,
-    ) -> str:
-        # Keep it readable and stable even if some fields are missing
-        date = subprocess.run("date", capture_output=True)
-        date = date.stdout.decode("utf-8").strip()
-        wday, month, mday, hour, am, tz, y = date.split()
-
-        return f"{wday} {mday} {month} {y}"
+    def _tick(self) -> bool:
+        now = datetime.datetime.now()
+        self.label.set_label(now.strftime("%H:%M:%S"))
+        self.set_tooltip_markup(now.strftime("%A %d %B %Y"))
+        return True
 
 
 class WeatherIcon(Label):
