@@ -35,9 +35,10 @@ class Svg(FabricSvg):
         if isinstance(svg_file, Path):
             svg_file = str(svg_file)
 
-        super().__init__(
-            svg_file=svg_file,
-            svg_string=svg_string,
+        if svg_file is not None and svg_string is not None:
+            raise ValueError("both svg_string and svg_file can't be set at the same time")
+
+        common_kwargs: dict[str, Any] = dict(
             name=name,
             visible=visible,
             all_visible=all_visible,
@@ -52,6 +53,12 @@ class Svg(FabricSvg):
             size=size,
             **kwargs,
         )
+        # fabric's overloads require exactly one of svg_file/svg_string to be
+        # set, so branch here rather than passing both optional arguments.
+        if svg_string is not None:
+            super().__init__(svg_string=svg_string, **common_kwargs)
+        else:
+            super().__init__(svg_file=svg_file, **common_kwargs)
 
     def do_draw(self, cr: cairo.Context):
         if not self._handle:

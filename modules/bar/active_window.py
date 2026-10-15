@@ -2,7 +2,6 @@ from typing import Any
 
 from fabric.widgets.box import Box
 from fabric.widgets.label import Label
-from fabric.audio.service import Audio
 
 from config.names import WORKSPACE_LABELS
 from services.hyprland import HyprlandManager, ActiveWindow, Monitor
@@ -30,8 +29,6 @@ class ActiveWindowWidget(Box):
     def __init__(self, hypr: HyprlandManager, mon_id: int, **kwargs: Any):
         self.hypr = hypr
         self.mon_id = mon_id
-
-        self.test_audio = Audio()
 
         _ws_id = self.hypr.workspaces[self.mon_id]["id"] if self.mon_id in self.hypr.workspaces else None
         icon_id: int | None = int(_ws_id) if _ws_id is not None else None

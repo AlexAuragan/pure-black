@@ -9,7 +9,7 @@
 /* Weather widget */
 #weather-widget {
     padding: 4px;
-    border-radius: 0 0 12px 12px;
+    border-radius: 0px 0px 12px 12px;
     background-color: var(--module-bg);
     color: var(--ws-hover);
 }
@@ -38,14 +38,14 @@
 #systray {
     margin: 0px 4px;
     padding: 4px;
-    border-radius: 0 0 12px 12px;
+    border-radius: 0px 0px 12px 12px;
     background-color: var(--module-bg);
     color: var(--ws-hover);
 }
 
 /* Perf widget */
 #perf {
-    border-radius: 0 0 12px 12px;
+    border-radius: 0px 0px 12px 12px;
 }
 #perf #perf_icon{
     color: var(--text);
@@ -67,7 +67,7 @@
 
 /* Active Window widget */
 #active-window {
-   border-radius: 0 0 12px 12px;
+   border-radius: 0px 0px 12px 12px;
 }
 #active-window .active_window_icon {
     margin: 0px 4px;
@@ -81,7 +81,7 @@
 
 /* Sound */
 #media-player {
-    border-radius: 0 0 12 12px;
+    border-radius: 0px 0px 12 12px;
     padding: 4px;
 }
 
@@ -139,7 +139,7 @@
 
 /* Systray */
 #systray {
-    border-radius: 0 0 10 10px;
+    border-radius: 0px 0px 10px 10px;
     background-color: var(--widget-bg);
     padding: 4px;
 }

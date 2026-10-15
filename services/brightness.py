@@ -50,7 +50,7 @@ class BrightnessStream(Service[Any, Any]):
         return self._connector_name
 
     @Property(float, "read-write")
-    def screen_brightness(self) -> float:
+    def screen_brightness(self) -> float:  # type: ignore[reportRedeclaration]
         return self._cached_brightness
 
     @screen_brightness.setter
@@ -311,111 +311,6 @@ class Brightness(Service[Any, Any]):
 
         threading.Thread(target=worker, args=(existing,), daemon=True).start()
         return False
-
-    def _scan_screens_compute(self, existing_streams: dict[str, Any]):
-        new_screens: list[BrightnessStream | tuple[Any, ...]] = []
-
-        if os.path.exists("/sys/class/backlight"):
-            for backlight_device in os.listdir("/sys/class/backlight"):
-                if backlight_device in existing_streams:
-                    new_screens.append(existing_streams[backlight_device])
-                else:
-                    new_screens.append(("create_internal", backlight_device))
-
-        output = subprocess.check_output(
-            ["ddcutil", "detect", "--terse", "--sleep-multiplier", ".1"],
-            stderr=subprocess.DEVNULL,
-        ).decode(errors="replace")
-
-        displays: list[dict[str, Any]] = []
-        current: dict[str, Any] = {}
-
-        def flush():
-            nonlocal current
-            if current:
-                displays.append(current)
-                current = {}
-
-        for raw_line in output.splitlines():
-            line = raw_line.strip()
-            if not line:
-                flush()
-                continue
-
-            ll = line.lower()
-
-            if ll.startswith("display "):
-                flush()
-                continue
-
-            if ll == "invalid display":
-                current["invalid"] = True
-                continue
-
-            if ll.startswith("i2c bus:"):
-                current["bus"] = line.split(":", 1)[1].strip()
-                continue
-
-            if ll.startswith("drm connector:"):
-                drm_connector = line.split(":", 1)[1].strip()
-                current["drm_connector"] = drm_connector
-                current["connector_name"] = drm_connector.split("-", 1)[1] if "-" in drm_connector else drm_connector
-                continue
-
-            if ll.startswith("drm_connector_id:"):
-                current["drm_connector_id"] = line.split(":", 1)[1].strip()
-                continue
-
-            if ll.startswith("monitor:"):
-                monitor_value = line.split(":", 1)[1].strip()
-                current["monitor_raw"] = monitor_value
-
-                parts = monitor_value.split(":", 2)
-                current["mfg"] = parts[0].strip() if len(parts) > 0 and parts[0].strip() else None
-                current["model"] = parts[1].strip() if len(parts) > 1 and parts[1].strip() else None
-                current["serial"] = parts[2].strip() if len(parts) > 2 and parts[2].strip() else None
-                continue
-
-        flush()
-
-        for d in displays:
-            bus = d.get("bus")
-            connector_name = d.get("connector_name")
-            model = d.get("model")
-            mfg = d.get("mfg")
-            serial = d.get("serial")
-
-            if not bus:
-                continue
-
-            if connector_name and connector_name.lower().startswith("edp"):
-                continue
-
-            if not connector_name:
-                continue
-
-            if not model:
-                continue
-
-            key = serial or bus
-
-            if key in existing_streams:
-                new_screens.append(existing_streams[key])
-            else:
-                new_screens.append(
-                    (
-                        "create_external",
-                        {
-                            "bus": bus,
-                            "model": model,
-                            "mfg": mfg,
-                            "serial": serial,
-                            "connector_name": connector_name,
-                        },
-                    )
-                )
-
-        return new_screens
 
     def _scan_screens_compute(self, existing_streams: dict[str, Any]):
         new_screens: list[BrightnessStream | tuple[Any, ...]] = []

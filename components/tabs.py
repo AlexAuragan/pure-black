@@ -176,7 +176,7 @@ class Tabs(EventBox):
         if tab is not None:
             tab.focus()
 
-    def _on_key_pressed(self, widget: Gtk.Widget, event: Gdk.Event) -> bool:
+    def _on_key_pressed(self, widget: Gtk.Widget, event: Gdk.EventKey) -> bool:
         """
         Handle Tab / Shift+Tab to move across tabs.
         Optionally handle Enter/Space to activate the focused tab again.

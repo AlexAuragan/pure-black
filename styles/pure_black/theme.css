@@ -80,7 +80,7 @@
     padding: 4px;
 }
 .top-widget {
-    border-radius: 0 0 12 12px;
+    border-radius: 0px 0px 12px 12px;
 }
 
 .shape {
@@ -91,7 +91,7 @@
 
 .top-corner {
     /*margin: 6 6 6 6px;*/
-    padding: 6 6 6 6px;
+    padding: 6px 6px 6px 6px;
 }
 
 

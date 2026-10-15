@@ -6,13 +6,13 @@
 
 #workspaces-content {
   padding: 4px;
-  border-radius: 0 0 12px 12px;
+  border-radius: 0px 0px 12px 12px;
 }
 
 #workspaces-background {
   padding: 4px;
   background-color: var(--module-bg);
-  border-radius: 0 0 12px 12px;
+  border-radius: 0px 0px 12px 12px;
 }
 
 

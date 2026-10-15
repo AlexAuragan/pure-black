@@ -1,7 +1,6 @@
 import subprocess
 from pathlib import Path
 from typing import Any
-from loguru import logger
 
 from fabric.widgets.box import Box
 from fabric.widgets.eventbox import EventBox

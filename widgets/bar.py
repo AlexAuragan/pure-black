@@ -28,9 +28,11 @@ from modules.bar.systray import SystemTray
 from modules.bar.weather import WeatherWidget
 from modules.bar.workspaces import HyprlandWorkspacesTray
 from modules.notification_center import NotificationCenter, NotificationPopup
+from services.battery import Battery
 from services.brightness import Brightness
 from services.hyprland import HyprlandManager
 from services.notifications import NotificationService
+from services.system_tray import SystemTray as SystemTrayService
 from services.weather import WeatherService
 
 audio_widget: bool = True
@@ -65,11 +67,13 @@ class StatusBar(Window):
     def __init__(
         self,
         monitor_id: int,
-        hyprland: HyprlandManager | None = None,
+        hyprland: HyprlandManager,
+        battery_service: Battery,
+        weather_service: WeatherService,
+        brightness_service: Brightness,
+        notif_service: NotificationService,
+        systray_service: SystemTrayService,
         audio: Any = None,
-        weather_service: WeatherService | None = None,
-        brightness_service: Brightness | None = None,
-        notif_service: NotificationService | None = None,
     ):
         """
         - begin
@@ -88,7 +92,7 @@ class StatusBar(Window):
             - systray
             - right_panel
         """
-        self.hyprland = hyprland or HyprlandManager()
+        self.hyprland = hyprland
         gdk_index = _gdk_index_for_hyprland_monitor(self.hyprland, monitor_id)
         super().__init__(
             name="bar",
@@ -102,22 +106,18 @@ class StatusBar(Window):
         self.audio = audio
         self.clock = ClockWidget()
 
-        _weather = weather_service or WeatherService(city="Paris", fetch_interval_minutes=10, use_uscs=False)
-        self.weather_widget = WeatherWidget(_weather, monitor=gdk_index)
+        self.weather_widget = WeatherWidget(weather_service, monitor=gdk_index)
 
-        # self.active_window = ActiveWindowWidget(HyprlandManager())
-        self.perf_widget = PerfWidget(monitor=gdk_index)
+        self.perf_widget = PerfWidget(battery_service, monitor=gdk_index)
 
         self.system_status = Box(name="system-status", spacing=4, orientation="h", children=[])
         self.active_window = ActiveWindowWidget(self.hyprland, monitor_id)
         self.workspaces = HyprlandWorkspacesTray(self.hyprland, two_rows=False, monitor_id=monitor_id)
-        self.systray = SystemTray()
-        _notif = notif_service or NotificationService(hyprland=self.hyprland)
-        self.notif_center = NotificationCenter(_notif, monitor=gdk_index)
+        self.systray = SystemTray(systray_service)
+        self.notif_center = NotificationCenter(notif_service, monitor=gdk_index)
         self.sound = Sound(self.audio, monitor=gdk_index) if self.audio is not None else None
         # self.media_player = MediaPlayer(self.audio)
-        _brightness = brightness_service or Brightness(self.hyprland)
-        self.brightness = BrightnessWidget(_brightness, monitor_id, monitor=gdk_index)
+        self.brightness = BrightnessWidget(brightness_service, monitor_id, monitor=gdk_index)
 
         self.left_box = Box(
             name="bar-left-box",
@@ -164,49 +164,48 @@ if __name__ == "__main__":
             monitor_id=monitor_id,
             hyprland=hypr_manager,
             audio=shared_audio,
+            battery_service=shared_battery,
             weather_service=shared_weather,
             brightness_service=shared_brightness,
             notif_service=shared_notif,
+            systray_service=shared_systray,
         )
 
     _rebuild_pending: list[int | None] = [None]  # holds the GLib source id for the debounce timer
 
-    def rebuild_bars(*_):
-        if _rebuild_pending[0] is not None:
-            GLib.source_remove(_rebuild_pending[0])
-        _rebuild_pending[0] = GLib.timeout_add(200, _do_rebuild)
+    def on_monitor_added(_, monitor_id: int) -> None:
+        if monitor_id in bars:
+            return
 
-    def _do_rebuild():
-        _rebuild_pending[0] = None
-        for bar in list(bars.values()):
-            bar.close()
-        bars.clear()
-        monitor_ids = list(hypr_manager.monitors.keys())
+        name = hypr_manager.monitors[monitor_id].get("name", "?")
+        print(f"[bar] adding bar for monitor id={monitor_id} name={name}")
 
-        def create_next(idx: int) -> bool:
-            if idx >= len(monitor_ids):
-                return False
-            mid = monitor_ids[idx]
-            name = hypr_manager.monitors[mid].get("name", "?")
-            print(f"[bar] rebuilding bar for monitor id={mid} name={name}")
-            new_bar = make_bar(mid)
-            bars[mid] = new_bar
-            app.add_window(new_bar)
-            GLib.idle_add(create_next, idx + 1)
-            return False
+        bar = make_bar(monitor_id)
+        bars[monitor_id] = bar
+        app.add_window(bar)
 
-        GLib.idle_add(create_next, 0)
-        return False
+
+    def on_monitor_removed(_, monitor_id: int) -> None:
+        bar = bars.pop(monitor_id, None)
+        if bar is None:
+            return
+
+        print(f"[bar] removing bar for monitor id={monitor_id}")
+
+        app.remove_window(bar)
+        bar.close()
 
     hypr_manager = HyprlandManager()
     shared_audio = Audio() if Audio is not None else None
     shared_weather = WeatherService(city="Paris", fetch_interval_minutes=10, use_uscs=False)
+    shared_battery = Battery()
     shared_brightness = Brightness(hypr_manager)
     shared_notif = NotificationService(hyprland=hypr_manager)
+    shared_systray = SystemTrayService()
     shared_popup = NotificationPopup(shared_notif)
 
-    hypr_manager.connect("monitor-added", rebuild_bars)
-    hypr_manager.connect("monitor-removed", rebuild_bars)
+    hypr_manager.connect("monitor-added", on_monitor_added)
+    hypr_manager.connect("monitor-removed", on_monitor_removed)
 
     bars = {mid: make_bar(mid) for mid in hypr_manager.monitors}
     app = Application("bars", *bars.values(), shared_popup)

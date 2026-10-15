@@ -11,7 +11,6 @@ from fabric.system_tray.service import (
     STATUS_NOTIFIER_WATCHER_BUS_PATH,
 )
 from fabric.utils.helpers import bulk_connect, get_enum_member
-from gi.repository.GLib import GError
 from loguru import logger
 
 gi.require_version("Gtk", "3.0")
@@ -178,49 +177,43 @@ class SystemTrayItem(Service):
         monochrome: bool = False,
         monochrome_tint: tuple[float, float, float] | None = None,
     ) -> GdkPixbuf.Pixbuf | None:
+        target_size = size if size is not None else 24
+
+        status = self.status
         icon_name = self.icon_name
         attention_icon_name = self.attention_icon_name
 
-        icon_pixmap = self.icon_pixmap
-        attention_icon_pixmap = self.attention_icon_pixmap
+        preferred_icon_name = (
+            attention_icon_name
+            if status == "NeedsAttention" and attention_icon_name
+            else icon_name
+        )
 
-        if self.status == "NeedsAttention" and (attention_icon_name is not None or attention_icon_pixmap is not None):
-            preferred_icon_name = attention_icon_name
-            preferred_icon_pixmap = attention_icon_pixmap
-        else:
-            preferred_icon_name = icon_name
-            preferred_icon_pixmap = icon_pixmap
-
-        if not preferred_icon_name and preferred_icon_pixmap is None and not self.title:
-            return None  # The icon has no data yet
-
-        target_size = size if size is not None else 24
-
-        # 1) Embedded pixmap
-        if preferred_icon_pixmap is not None:
-            pixbuf = preferred_icon_pixmap.as_pixbuf(target_size)
-            if pixbuf is not None:
-                return self._maybe_monochrome(
-                    self._scale(pixbuf, size, resize_method),
-                    monochrome,
-                    monochrome_tint,
-                )
-
-        # 2) Absolute path supplied directly as icon_name
+        # Absolute path supplied directly as icon_name
         if preferred_icon_name:
             path = Path(preferred_icon_name)
             if path.is_absolute() and path.exists():
                 try:
-                    pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_scale(str(path), target_size, target_size, True)
-                    return self._maybe_monochrome(pixbuf, monochrome, monochrome_tint)
+                    pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_scale(
+                        str(path),
+                        target_size,
+                        target_size,
+                        True,
+                    )
+                    return self._maybe_monochrome(
+                        pixbuf,
+                        monochrome,
+                        monochrome_tint,
+                    )
                 except Exception:
-                    return None
+                    pass
 
-        # 3) GTK icon theme (respects the item's own IconThemePath)
+        # GTK icon theme
         if preferred_icon_name:
             icon_theme = self.icon_theme
             icon_theme_sizes: list = icon_theme.get_icon_sizes(preferred_icon_name) or []
             icon_theme_sizes.append(target_size)
+
             try:
                 pixbuf = icon_theme.load_icon(
                     preferred_icon_name,
@@ -236,34 +229,77 @@ class SystemTrayItem(Service):
             except Exception:
                 pass
 
-        # 4) XDG filesystem resolver — handles nordvpn-style names, pixmaps dirs, etc.
+        # XDG filesystem resolver
         if preferred_icon_name:
             for candidate in self._icon_name_candidates(preferred_icon_name):
                 resolved = _resolve_icon_path(candidate)
-                if resolved:
-                    logger.debug(f"[SystemTray] resolved '{preferred_icon_name}' → '{resolved}' via XDG resolver")
-                    try:
-                        pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_scale(resolved, target_size, target_size, True)
-                        return self._maybe_monochrome(pixbuf, monochrome, monochrome_tint)
-                    except Exception:
-                        pass
+                if not resolved:
+                    continue
 
-        # 5) Last resort: match via desktop-entry using the item's title
+                logger.debug(
+                    f"[SystemTray] resolved '{preferred_icon_name}' "
+                    f"→ '{resolved}' via XDG resolver"
+                )
+
+                try:
+                    pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_scale(
+                        resolved,
+                        target_size,
+                        target_size,
+                        True,
+                    )
+                    return self._maybe_monochrome(
+                        pixbuf,
+                        monochrome,
+                        monochrome_tint,
+                    )
+                except Exception:
+                    pass
+
+        # Only unpack the expensive D-Bus pixmap if icon_name failed.
+        if status == "NeedsAttention":
+            preferred_icon_pixmap = self.attention_icon_pixmap
+            if preferred_icon_pixmap is None:
+                preferred_icon_pixmap = self.icon_pixmap
+        else:
+            preferred_icon_pixmap = self.icon_pixmap
+
+        if preferred_icon_pixmap is not None:
+            pixbuf = preferred_icon_pixmap.as_pixbuf(target_size)
+            if pixbuf is not None:
+                return self._maybe_monochrome(
+                    self._scale(pixbuf, size, resize_method),
+                    monochrome,
+                    monochrome_tint,
+                )
+
+        # Last resort: desktop-entry lookup using title
         title = self.title
         if title:
-            print("resolving", title)
             resolved = guess_icon_path_from_window_class(title)
             if resolved:
-                logger.debug(f"[SystemTray] resolved icon for '{title}' via desktop-entry: '{resolved}'")
+                logger.debug(
+                    f"[SystemTray] resolved icon for '{title}' "
+                    f"via desktop-entry: '{resolved}'"
+                )
                 try:
-                    pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_scale(resolved, target_size, target_size, True)
-                    return self._maybe_monochrome(pixbuf, monochrome, monochrome_tint)
+                    pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_scale(
+                        resolved,
+                        target_size,
+                        target_size,
+                        True,
+                    )
+                    return self._maybe_monochrome(
+                        pixbuf,
+                        monochrome,
+                        monochrome_tint,
+                    )
                 except Exception:
                     pass
 
         logger.warning(
             f"[SystemTray] could not resolve icon for item '{self._identifier}' "
-            f"(icon_name={preferred_icon_name!r}, title={self.title!r})"
+            f"(icon_name={preferred_icon_name!r}, title={title!r})"
         )
         return None
 
@@ -395,7 +431,7 @@ class SystemTrayItem(Service):
     def icon_theme(self) -> Gtk.IconTheme:
         if not self._icon_theme:
             self._icon_theme = Gtk.IconTheme.get_default()
-            search_path = self.get_icon_theme_path()
+            search_path = self.icon_theme_path
             if search_path not in (None, ""):
                 existing = list(self._icon_theme.get_search_path())
                 if search_path not in existing:
@@ -406,7 +442,7 @@ class SystemTrayItem(Service):
     def icon_name(self) -> str:
         return self.do_get_proxy_property("IconName")
 
-    @Property(SystemTrayItemPixmap, "readable")
+    @Property(SystemTrayItemPixmap, "readable")  # type: ignore[reportArgumentType]
     def icon_pixmap(self) -> SystemTrayItemPixmap | None:
         return self.do_extract_pixmap(self.do_get_proxy_property("IconPixmap"))
 
@@ -414,7 +450,7 @@ class SystemTrayItem(Service):
     def overlay_icon_name(self) -> str:
         return self.do_get_proxy_property("OverlayIconName")
 
-    @Property(SystemTrayItemPixmap, "readable")
+    @Property(SystemTrayItemPixmap, "readable")  # type: ignore[reportArgumentType]
     def overlay_icon_pixmap(self) -> SystemTrayItemPixmap | None:
         return self.do_extract_pixmap(self.do_get_proxy_property("OverlayIconPixmap"))
 
@@ -422,7 +458,7 @@ class SystemTrayItem(Service):
     def attention_icon_name(self) -> str:
         return self.do_get_proxy_property("AttentionIconName")
 
-    @Property(SystemTrayItemPixmap, "readable")
+    @Property(SystemTrayItemPixmap, "readable")  # type: ignore[reportArgumentType]
     def attention_icon_pixmap(self) -> SystemTrayItemPixmap | None:
         return self.do_extract_pixmap(self.do_get_proxy_property("AttentionIconPixmap"))
 
@@ -442,22 +478,22 @@ class SystemTrayItem(Service):
     def menu(self) -> DbusmenuGtk3.Menu:
         if self._menu is not None:
             return self._menu
-        self._menu = self.do_create_menu(self._proxy.get_name_owner() or "", self.get_menu_object_path())
+        self._menu = self.do_create_menu(self._proxy.get_name_owner() or "", self.menu_object_path)
         return self._menu  # type: ignore
 
     # remote methods
     def context_menu(self, x: int, y: int) -> None:
         """to open a server-side context menu"""
-        return self._proxy.ContextMenu("(ii)", x, y)
+        return self._proxy.ContextMenu("(ii)", x, y)  # type: ignore[reportAttributeAccessIssue]
 
     def activate(self, x: int, y: int) -> None:
-        return self._proxy.Activate("(ii)", x, y)
+        return self._proxy.Activate("(ii)", x, y)  # type: ignore[reportAttributeAccessIssue]
 
     def secondary_activate(self, x: int, y: int) -> None:
-        return self._proxy.SecondaryActivate("(ii)", x, y)
+        return self._proxy.SecondaryActivate("(ii)", x, y)  # type: ignore[reportAttributeAccessIssue]
 
     def invoke_menu_for_event(self, event: Gdk.Event) -> None:
-        menu = self.get_menu()
+        menu = self.menu
         if menu is not None and menu.get_children():
             return menu.popup_at_pointer(event)
         try:
@@ -466,7 +502,7 @@ class SystemTrayItem(Service):
             return None
 
     def scroll(self, delta: int, orientation: Literal["vertical", "horizontal"]) -> None:
-        return self._proxy.Scroll("(is)", delta, orientation)
+        return self._proxy.Scroll("(is)", delta, orientation)  # type: ignore[reportAttributeAccessIssue]
 
     # event methods
     def context_menu_for_event(self, event: Gdk.Event) -> None:
@@ -691,7 +727,7 @@ class SystemTray(Service):
             or bus_path is None
             or not isinstance(bus_name, str)
             or not isinstance(bus_path, str)
-            or self.get_items().get(bus_name + bus_path) is not None
+            or self.items.get(bus_name + bus_path) is not None
         ):
             return None
 
@@ -739,7 +775,7 @@ class SystemTray(Service):
         self.add_item(item)
         return
 
-    def do_emit_bus_signal(self, signal_name: str, params: GLib.Variant) -> None:
+    def do_emit_bus_signal(self, signal_name: str, params: GLib.Variant | None) -> None:
         (
             self._connection.emit_signal(
                 None,

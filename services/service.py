@@ -1,18 +1,17 @@
-from abc import ABC, abstractmethod
-from typing import Any, Callable, Generic, TypeVar
+from abc import ABC
+from typing import Callable, Generic, TypeVar, cast
 
 T = TypeVar("T")
 
 
 class Service(ABC, Generic[T]):
-    def __init__(self):
-        # the keys are the monitor ids, each data is here once per monitor
-        self._data: dict[int | str, T] = {}
-        self._callbacks: list[Callable[[dict[int | str, T]], None]] = []
+    def __init__(self) -> None:
+        self._data: T = cast(T, {})
+        self._callbacks: list[Callable[[T], None]] = []
 
-    def bind(self, func: Callable[[dict[int | str, T]], None]):
+    def bind(self, func: Callable[[T], None]) -> None:
         self._callbacks.append(func)
 
     @property
-    def data(self):
+    def data(self) -> T:
         return self._data

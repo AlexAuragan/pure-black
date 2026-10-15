@@ -14,7 +14,7 @@ from gi.repository.GdkPixbuf import Pixbuf
 from gi.repository.Gtk import Align
 
 from config.names import WORKSPACE_LABELS
-from services.hyprland import HyprlandManager, Monitor
+from services.hyprland import HyprlandManager
 from services.watchdog import watchdog
 
 

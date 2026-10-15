@@ -11,15 +11,6 @@ from services.system_tray import (
 )
 from modules.bar.clock import ClockWidget
 
-watcher = None
-
-
-def get_tray_watcher() -> SystemTrayService:
-    global watcher
-    if not watcher:
-        watcher = SystemTrayService()
-    return watcher
-
 
 class SystemTrayItem(Button):
     def __init__(self, item: SystemTrayItemService, icon_size: int, **kwargs: Any):
@@ -71,12 +62,12 @@ class SystemTrayItem(Button):
 
 
 class SysTray(Box):
-    def __init__(self, icon_size: int = 24, **kwargs: Any):
+    def __init__(self, tray_service: SystemTrayService, icon_size: int = 24, **kwargs: Any):
         super().__init__(**kwargs)
         self._icon_size = icon_size
         self._items: dict[str, SystemTrayItem] = {}
 
-        self._watcher = get_tray_watcher()
+        self._watcher = tray_service
         self._watcher.connect("item-added", self.on_item_added)
         self._watcher.connect("item-removed", self.on_item_removed)
 
@@ -104,8 +95,8 @@ class SysTray(Box):
 
 
 class SystemTray(Box):
-    def __init__(self, **kwargs: Any):
+    def __init__(self, tray_service: SystemTrayService, **kwargs: Any):
 
-        self.systray = SysTray(icon_size=16, spacing=4)
+        self.systray = SysTray(tray_service, icon_size=16, spacing=4)
         self.clock = ClockWidget()
         super().__init__(spacing=6, name="systray", children=[self.systray, self.clock], **kwargs)

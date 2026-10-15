@@ -1,14 +1,14 @@
 /* ── Bar end pill (bell + systray + clock fused) ──────────────────────── */
 #bar-end-box {
     padding: 4px 8px;
-    border-radius: 0 0 12px 12px;
+    border-radius: 0px 0px 12px 12px;
     background-color: var(--module-bg);
     /* individual children have no background of their own */
 }
 
 #bar-end-box #systray {
     background-color: transparent;
-    border-radius: 0;
+    border-radius: 0px;
     padding: 0;
     margin: 0;
 }

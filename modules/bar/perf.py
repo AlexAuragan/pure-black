@@ -13,12 +13,14 @@ from fabric.widgets.scale import Scale
 from fabric.widgets.label import Label
 from fabric.widgets.separator import Separator
 from fabric.widgets.wayland import WaylandWindow
+from fabric.widgets.widget import Widget
 
 from components import Svg
 
 from gi.repository import GLib, Gdk, Gtk
 
 from components.popup_widget import PopupWidget, PopupWindow
+from services.battery import Battery
 from utils.widget_utils import position_under
 
 PROJECT_DIR = os.path.dirname(os.path.realpath(Path(__file__).parent.parent))
@@ -170,7 +172,7 @@ class PerfPopupWindow(WaylandWindow):
         if self.get_visible() or not self.view.is_init:
             self.view.update_display(data)
 
-    def open(self, widget: Gtk.Widget) -> None:
+    def open(self, widget: Widget) -> None:
         position_under(widget, self)
         self.set_visible(True)
 
@@ -181,14 +183,17 @@ class PerfPopupWindow(WaylandWindow):
 
 
 class PerfWidget(PopupWidget):
-    def __init__(self, monitor: int = 0):
+    def __init__(self, battery_service: Battery, monitor: int = 0):
         base = PROJECT_DIR + "/styles/pure_black/icons/pc/"
+        self._icon_dir = base
+        self.battery_service = battery_service
         cpu_icon = Svg(base + "cpu.svg", icon_size=12)
         cpu_icon.set_name("perf_icon")
         ram_icon = Svg(base + "memory.svg", icon_size=12)
         ram_icon.set_name("perf_icon")
-        battery_icon = Svg(base + "battery.svg", icon_size=12)
-        battery_icon.set_name("perf_icon")
+        self._current_battery_icon = "battery_7.svg"
+        self.battery_icon = Svg(base + self._current_battery_icon, icon_size=12)
+        self.battery_icon.set_name("perf_icon")
 
         self.cpu_widget = CircularProgressBar(
             name="cpu-progress-bar",
@@ -206,7 +211,7 @@ class PerfWidget(PopupWidget):
         self.battery_widget = CircularProgressBar(
             name="battery-progress-bar",
             pie=True,
-            child=battery_icon,
+            child=self.battery_icon,
             size=24,
         )
 
@@ -215,13 +220,15 @@ class PerfWidget(PopupWidget):
 
         children = [self.cpu_widget, self.ram_widget]
 
-        if psutil.sensors_battery() is not None:
+        if self.battery_service.present:
             children.append(self.battery_widget)
 
         self._inner = Box(children=children, spacing=4, name="perf")
         super().__init__(name="perf", main_widget=self._inner, popup_window=self.popup)
         self.add_style_class("top-widget")
         self.connect("button-press-event", self.on_button_press)
+        self.battery_service.connect("changed", self._on_battery_changed)
+        self._on_battery_changed()
         self._stop = threading.Event()
         self.connect("destroy", lambda *_: self._stop.set())
         threading.Thread(target=self._poll_loop, daemon=True).start()
@@ -238,7 +245,6 @@ class PerfWidget(PopupWidget):
                 data = {
                     "cpu": psutil.cpu_percent(),
                     "ram": psutil.virtual_memory(),
-                    "battery": psutil.sensors_battery(),
                     "procs": procs,
                 }
                 if not self._stop.is_set():
@@ -250,10 +256,34 @@ class PerfWidget(PopupWidget):
     def on_perf_changed(self, data: dict[str, Any]):
         self.cpu_widget.value = data["cpu"] / 100
         self.ram_widget.value = data["ram"].percent / 100
-        if (battery := data.get("battery")) is not None:
-            self.battery_widget.value = battery.percent / 100
         if self.popup.get_visible():
             self.popup_view.update_display(data)
+
+    def _on_battery_changed(self, *_) -> None:
+        service = self.battery_service
+        if not service.present:
+            return
+        self.battery_widget.value = service.percent / 100
+        self._update_battery_icon(service.percent, service.charging)
+
+    def _update_battery_icon(self, percent: float | None, power_plugged: bool | None) -> None:
+        name = self._battery_icon_name(percent, power_plugged)
+        if name == self._current_battery_icon:
+            return
+        self._current_battery_icon = name
+        self.battery_icon.set_from_file(self._icon_dir + name)
+
+    @staticmethod
+    def _battery_icon_name(percent: float | None, power_plugged: bool | None) -> str:
+        # no reading at all -> "unknown" fallback (shouldn't show on desktops)
+        if percent is None:
+            return "battery_error.svg"
+        # plugged in -> charging icon
+        if power_plugged:
+            return "battery_charging.svg"
+        # 8 levels (0 = empty/alert ... 7 = full), each spanning 12.5%
+        level = max(0, min(7, int(percent * 8 / 100)))
+        return f"battery_{level}.svg"
 
     def on_button_press(self, widget: Gtk.Widget, event: Gdk.EventButton) -> None:
         if event.button == 1:
