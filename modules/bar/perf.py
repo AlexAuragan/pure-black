@@ -29,7 +29,7 @@ GAP = 4
 
 
 class PerfPopupView(Box):
-    def __init__(self, **kwargs: Any):
+    def __init__(self, battery_service: Battery | None = None, **kwargs: Any):
         super().__init__(
             name="perf-popup",
             orientation="v",
@@ -37,6 +37,7 @@ class PerfPopupView(Box):
             style="padding: 15px; min-width: 380px;",  # Widened for dual columns
             **kwargs,
         )
+        self.battery_service = battery_service
         self.is_init: bool = False
         # --- CPU & RAM Bars ---
         self.res_row = Box(orientation="h", spacing=20)
@@ -71,8 +72,26 @@ class PerfPopupView(Box):
         self.ram_col.add(self.ram_label)
         self.ram_col.add(self.ram_bar)
 
+        # Battery column (only shown when a battery actually exists)
+        self.bat_col = Box(orientation="v", spacing=4, h_expand=True)
+        self.bat_col.add(
+            Label(
+                label="BATTERY",
+                x_align=0,
+                style="font-weight: bold; color: var(--accent5);",
+            )
+        )
+        self.bat_value = Label(label="--%", x_align=0)
+        self.bat_status = Label(label="--", x_align=0)
+        self.bat_col.add(self.bat_value)
+        self.bat_col.add(self.bat_status)
+
         self.res_row.add(self.cpu_col)
         self.res_row.add(self.ram_col)
+        if self.battery_service is not None and self.battery_service.present:
+            self.res_row.add(self.bat_col)
+            self.battery_service.connect("changed", self._on_battery_changed)
+            self._on_battery_changed()
         self.add(self.res_row)
 
         self.add(Separator())
@@ -80,7 +99,7 @@ class PerfPopupView(Box):
         # --- Processes (Dual Column) ---
         self.proc_container = Box(orientation="h", spacing=15)
 
-        # Left Column: Top CPU
+        # Column 3: Top CPU
         self.cpu_proc_col = Box(orientation="v", spacing=4, h_expand=True)
         self.cpu_proc_col.add(
             Label(
@@ -92,7 +111,7 @@ class PerfPopupView(Box):
         self.cpu_proc_list = Label(label="...", x_align=0, style="font-family: monospace; font-size: 11px;")
         self.cpu_proc_col.add(self.cpu_proc_list)
 
-        # Right Column: Top RAM
+        # Column 2: Top RAM
         self.mem_proc_col = Box(orientation="v", spacing=4, h_expand=True)
         self.mem_proc_col.add(
             Label(
@@ -106,6 +125,7 @@ class PerfPopupView(Box):
 
         self.proc_container.add(self.cpu_proc_col)
         self.proc_container.add(self.mem_proc_col)
+
         self.add(self.proc_container)
 
         self.add(Separator())
@@ -150,6 +170,17 @@ class PerfPopupView(Box):
             )
         )
 
+    def _on_battery_changed(self, *_) -> None:
+        service = self.battery_service
+        if service is None or not service.present:
+            return
+        if service.charging:
+            status = "Full" if service.percent >= 100 else "Charging"
+        else:
+            status = "Discharging"
+        self.bat_value.set_label(f"{service.percent:.0f}%")
+        self.bat_status.set_label(status)
+
 
 class PerfPopupWindow(WaylandWindow):
     def __init__(self, perf_data: Fabricator[Any], **kwargs: Any):
@@ -192,6 +223,7 @@ class PerfWidget(PopupWidget):
         ram_icon = Svg(base + "memory.svg", icon_size=12)
         ram_icon.set_name("perf_icon")
         self._current_battery_icon = "battery_7.svg"
+        self._battery_state: str | None = None
         self.battery_icon = Svg(base + self._current_battery_icon, icon_size=12)
         self.battery_icon.set_name("perf_icon")
 
@@ -215,7 +247,7 @@ class PerfWidget(PopupWidget):
             size=24,
         )
 
-        self.popup_view = PerfPopupView()
+        self.popup_view = PerfPopupView(self.battery_service)
         self.popup = PopupWindow(self.popup_view, monitor=monitor)
 
         children = [self.cpu_widget, self.ram_widget]
@@ -265,6 +297,7 @@ class PerfWidget(PopupWidget):
             return
         self.battery_widget.value = service.percent / 100
         self._update_battery_icon(service.percent, service.charging)
+        self._update_battery_color(service.percent, service.charging)
 
     def _update_battery_icon(self, percent: float | None, power_plugged: bool | None) -> None:
         name = self._battery_icon_name(percent, power_plugged)
@@ -272,6 +305,24 @@ class PerfWidget(PopupWidget):
             return
         self._current_battery_icon = name
         self.battery_icon.set_from_file(self._icon_dir + name)
+
+    def _update_battery_color(self, percent: float | None, charging: bool | None) -> None:
+        if charging:
+            state = "battery-charging"
+        elif percent is not None and percent < 10:
+            state = "battery-critical"
+        elif percent is not None and percent < 20:
+            state = "battery-low"
+        else:
+            state = None
+        if state == self._battery_state:
+            return
+        self._battery_state = state
+        for cls in ("battery-charging", "battery-low", "battery-critical"):
+            self.battery_widget.remove_style_class(cls)
+        if state is not None:
+            self.battery_widget.add_style_class(state)
+        self.battery_widget.queue_draw()
 
     @staticmethod
     def _battery_icon_name(percent: float | None, power_plugged: bool | None) -> str:

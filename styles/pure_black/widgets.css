@@ -58,6 +58,19 @@
     border: solid 0px alpha(var(--accent1), 0.8);
 }
 
+/* battery state colors (the progress arc is drawn with the border color) */
+#battery-progress-bar.battery-charging {
+    border-color: alpha(var(--color5), 0.8); /* green while charging */
+}
+
+#battery-progress-bar.battery-low {
+    border-color: alpha(var(--color3), 0.8); /* yellow under 20% */
+}
+
+#battery-progress-bar.battery-critical {
+    border-color: alpha(var(--color0), 0.8); /* red under 10% */
+}
+
 #perf-popup {
     padding: 4px;
     border-radius: 12px 12px 12px 12px;

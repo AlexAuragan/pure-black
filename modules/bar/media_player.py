@@ -6,7 +6,6 @@ from fabric.audio.service import Audio, AudioStream
 from fabric.widgets.box import Box
 from fabric.widgets.eventbox import EventBox
 from fabric.widgets.image import Image
-from fabric.widgets.svg import Svg
 
 from gi.repository import Gio
 from gi.repository.GObject import ParamSpecBoxed
